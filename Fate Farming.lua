@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.11  *
+  *  1.1.12  *
   ***********
-    -> 1.1.11   Skip retainer if Twist of Fate buff is up
+    -> 1.1.12   Added more waits during materia extraction
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -1740,6 +1740,10 @@ while true do
                 LogInfo("[FATE] Extracting materia...")
                 if not IsAddonVisible("Materialize") then
                     yield("/generalaction \"Materia Extraction\"")
+                    yield("/wait 0.5")
+                end
+                while not IsAddonVisible("Materialize") do
+                    yield("/wait 0.5")
                 end
                 yield("/pcall Materialize true 2")
                 yield("/wait 0.5")
