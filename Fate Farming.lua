@@ -1112,10 +1112,10 @@ function MoveToFate(nextFate)
     yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
 
     local angle = math.random() * 2 * math.pi
-    local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
-    local randomX = nextFate.x + (radius / (2 * math.cos(angle)))
+    local radius = 30 * math.random() -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
+    local randomX = nextFate.x + (radius * math.cos(angle))
     local randomY = nextFate.y + 10
-    local randomZ = nextFate.z + (radius / (2 * math.sin(angle)))
+    local randomZ = nextFate.z + (radius * math.sin(angle))
 
     LogInfo("[FATE] Math checks out")
     LogInfo("[FATE] Fate location: "..nextFate.x..", "..nextFate.y..", "..nextFate.z)
