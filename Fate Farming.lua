@@ -394,7 +394,6 @@ FatesData = {
                 "Pearls Apart",
             },
             otherNpcFates= {
-                --{ fateName= "The Seashells He Sells", npcName= "Mewshs Laan" }, this is an escort fate
                 { fateName= "Where has the Dagon", npcName= "Teushs Ooan" },
                 { fateName= "Ondo of Blood", npcName= "Teushs Ooan" },
                 { fateName= "Lookin' Back on the Track", npcName= "Teushs Ooan" },
@@ -558,11 +557,11 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {
                 { fateName= "Pasture Expiration Date", npcName= "Tsivli Stoutstrider" },
-                -- { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
-                -- { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
+                { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
+                { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
                 { fateName= "Birds Up", npcName= "Coffee Farmer" },
                 { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" },
-                -- { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
+                { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
                 { fateName= "Wolf Parade", npcName= "Pelupelu Peddler" },
             },
             bossFates= {
@@ -828,33 +827,21 @@ end
 
 --Wrapper to dismount
 function Dismount()
-    local timeout_start = os.clock()
-
-    local playerPosition = {
-        x = GetPlayerRawXPos(),
-        y = GetPlayerRawYPos(),
-        z = GetPlayerRawZPos()
-    }
-
     if PathIsRunning() or PathfindInProgress() then
         yield("/vnav stop")
     end
 
     -- characters that are flying are also mounted
-    if GetCharacterCondition(CharacterCondition.mounted) then
+    local retries = 0
+    while GetCharacterCondition(CharacterCondition.mounted) do
         yield('/ac dismount')
-        repeat
-            yield("/wait ".. 1)
-            if GetCharacterCondition(CharacterCondition.flying) then
-                yield('/ac dismount')
-            end
-            -- as a last ditch effort quit trying to dismount and teleport
-            -- if timeout_check(timeout_start,15) then
-            --     TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
-            --     return
-            -- end
+        yield("/wait 2")
+
+        if retries >= 3 then
             antistuck()
-        until not GetCharacterCondition(CharacterCondition.mounted)
+        end
+
+        retries = retries + 1
     end
 end
 
@@ -1097,7 +1084,7 @@ end
 
 --Paths to the Fate NPC Starter
 function MoveToNPC(fate)
-
+    LogInfo("MoveToNPC function")
     if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
         local npc_x = GetTargetRawXPos() + (3 * random_direct())
         local npc_y = GetTargetRawYPos()
@@ -1106,12 +1093,12 @@ function MoveToNPC(fate)
         local i = 5
         local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,i,i)
         if nearestLandX == nil then
-            nearestLandX = npc.x
+            nearestLandX = npc_x
         end
-        local nearestLandY = npc.y + 5
+        local nearestLandY = npc_y + 5
         local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
         if nearestLandZ == nil then
-            nearestLandZ = npc.z
+            nearestLandZ = npc_z
         end
 
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
@@ -1127,10 +1114,11 @@ function MoveToFate(nextFate)
     local angle = math.random() * 2 * math.pi
     local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
     local randomX = nextFate.x + (radius / (2 * math.cos(angle)))
-    local randomY = nextFate.y + 5
+    local randomY = nextFate.y + 10
     local randomZ = nextFate.z + (radius / (2 * math.sin(angle)))
 
     LogInfo("[FATE] Math checks out")
+    LogInfo("[FATE] Fate location: "..nextFate.x..", "..nextFate.y..", "..nextFate.z)
     LogInfo("[FATE] Random point: "..randomX..", "..randomY..", "..randomZ)
 
     local i = 5
@@ -1171,7 +1159,7 @@ function MoveToFate(nextFate)
         LogInfo("[FATE] Moving to "..nearestLandX..", "..nextFate.y..", "..nearestLandZ)
         yield("/vnavmesh stop")
         yield("/wait 1")
-        PathfindAndMoveTo(nearestLandX, nextFate.y, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
+        PathfindAndMoveTo(nearestLandX, randomY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
 end
 
@@ -1235,6 +1223,7 @@ function InteractWithFateNpc(fate)
     yield("/wait 1")
     yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
     yield("/echo [FATE] Fate begun")
+    yield("/wait "..fatewait)
     LogInfo("[FATE] Exiting InteractWithFateNpc")
 end
 
