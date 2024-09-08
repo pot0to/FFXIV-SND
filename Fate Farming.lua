@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.12  *
+  *  1.1.14  *
   ***********
-    -> 1.1.13   Added call to HandleDeath() and blaclisted Domo Arigato
+    -> 1.1.14   Update order of operations
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -668,7 +668,7 @@ FatesData = {
                 { fateName= "It's Super Defective", npcName= "Novice Hunter" },
                 { fateName= "Running of the Katobleps", npcName= "Novice Hunter" },
                 { fateName= "Ware the Wolves", npcName= "Imperiled Hunter" },
-                -- { fateName= "Domo Arigato", npcName= "Perplexed Reforger" },
+                { fateName= "Domo Arigato", npcName= "Perplexed Reforger" },
                 { fateName= "Old Stampeding Grounds", npcName= "Driftdowns Reforger" },
                 { fateName= "Pulling the Wool", npcName= "Panicked Courier" }
             },
@@ -677,7 +677,7 @@ FatesData = {
                 "(Got My Eye) Set on You"
             },
             blacklistedFates= {
-                "Domo Arigato"
+                -- "Domo Arigato"
             }
         }
     },
@@ -1120,18 +1120,25 @@ function MoveToFate(nextFate)
 
     local angle = math.random() * 2 * math.pi
     local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
-    local randomX = nextFate.x + radius / 2 * math.cos(angle)
+    local randomX = nextFate.x + (radius / (2 * math.cos(angle)))
     local randomY = nextFate.y
-    local randomZ = nextFate.z + radius / 2 * math.sin(angle)
+    local randomZ = nextFate.z + (radius / (2 * math.sin(angle)))
+
+    LogInfo("[FATE] Math checks out")
 
     local i = 5
     local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
-    local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i)
+    local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i) -- QueryMeshPointOnFloorY(randomX,randomY,randomZ,true,i)
     local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
+
+    LogInfo("[FATE] Queried nearest points")
+    LogInfo("[FATE] Nearest points are: "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
     end
+
+    LogInfo("[FATE] Generated random coordinates in fate: "..randomX..", "..randomY..", "..randomZ)
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
