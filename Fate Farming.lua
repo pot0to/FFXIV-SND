@@ -1198,6 +1198,7 @@ function InteractWithFateNpc(fate)
             yield("/wait 1")
         until IsAddonVisible("Talk") or IsInFate() or not IsFateActive(fate.fateId)
         while GetCharacterCondition(CharacterCondition.occupied32) do
+            LogInfo("Occupied by NPC")
             if IsAddonVisible("Talk") then
                 yield("/click Talk Click")
             elseif IsAddonVisible("SelectYesno") then
@@ -1207,6 +1208,7 @@ function InteractWithFateNpc(fate)
         end
         yield("/wait 1") -- wait to register
         while GetTargetName() == fate.npcName do
+            LogInfo("Attempting to clear target.")
             ClearTarget()
             yield("/wait 1")
         end
