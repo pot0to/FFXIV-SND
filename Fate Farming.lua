@@ -10,7 +10,7 @@
   * Version *
   *  1.1.14  *
   ***********
-    -> 1.1.14   Update order of operations
+    -> 1.1.14   Update order of operations, removed random y
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -1098,15 +1098,21 @@ end
 --Paths to the Fate NPC Starter
 function MoveToNPC(fate)
 
-    if HasTarget() and GetTargetName()==fate.npcName then
+    if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
         local npc_x = GetTargetRawXPos() + (3 * random_direct())
         local npc_y = GetTargetRawYPos()
         local npc_z = GetTargetRawZPos() + (3 * random_direct())
 
         local i = 5
         local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,i,i)
-        local nearestLandY = QueryMeshNearestPointY(npc_x,npc_y,npc_z,i,i)
+        if nearestLandX == nil then
+            nearestLandX = npc.x
+        end
+        local nearestLandY = npc.y + 5
         local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
+        if nearestLandZ == nil then
+            nearestLandZ = npc.z
+        end
 
         PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
     end
@@ -1121,21 +1127,27 @@ function MoveToFate(nextFate)
     local angle = math.random() * 2 * math.pi
     local radius = 30 -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
     local randomX = nextFate.x + (radius / (2 * math.cos(angle)))
-    local randomY = nextFate.y
+    local randomY = nextFate.y + 5
     local randomZ = nextFate.z + (radius / (2 * math.sin(angle)))
 
     LogInfo("[FATE] Math checks out")
+    LogInfo("[FATE] Random point: "..randomX..", "..randomY..", "..randomZ)
 
     local i = 5
-    local nearestLandX = QueryMeshNearestPointX(randomX,randomY,randomZ,i,i)
-    local nearestLandY = QueryMeshNearestPointY(randomX,randomY,randomZ,i,i) -- QueryMeshPointOnFloorY(randomX,randomY,randomZ,true,i)
-    local nearestLandZ = QueryMeshNearestPointZ(randomX,randomY,randomZ,i,i)
+    local nearestLandX = QueryMeshNearestPointX(randomX, randomY, randomZ,i,i)
+    if nearestLandX == nil then
+        nearestLandX = nextFate.x
+    end
+    local nearestLandZ = QueryMeshNearestPointZ(randomX, randomY, randomZ,i,i)
+    if nearestLandZ == nil then
+        nearestLandZ = nextFate.z
+    end
 
     LogInfo("[FATE] Queried nearest points")
-    LogInfo("[FATE] Nearest points are: "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
+    LogInfo("[FATE] Nearest points are: "..nearestLandX..", "..randomY..", "..nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
-        SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
+        SetMapFlag(SelectedZone.zoneId, nearestLandX, randomY, nearestLandZ)
     end
 
     LogInfo("[FATE] Generated random coordinates in fate: "..randomX..", "..randomY..", "..randomZ)
@@ -1156,10 +1168,10 @@ function MoveToFate(nextFate)
     end
 
     if not IsInFate() then
-        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
+        LogInfo("[FATE] Moving to "..nearestLandX..", "..nextFate.y..", "..nearestLandZ)
         yield("/vnavmesh stop")
         yield("/wait 1")
-        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
+        PathfindAndMoveTo(nearestLandX, nextFate.y, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
 end
 
