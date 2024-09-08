@@ -10,7 +10,7 @@
   * Version *
   *  1.1.12  *
   ***********
-    -> 1.1.12   Added more waits during materia extraction
+    -> 1.1.13   Added call to HandleDeath() and blaclisted Domo Arigato
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -668,7 +668,7 @@ FatesData = {
                 { fateName= "It's Super Defective", npcName= "Novice Hunter" },
                 { fateName= "Running of the Katobleps", npcName= "Novice Hunter" },
                 { fateName= "Ware the Wolves", npcName= "Imperiled Hunter" },
-                { fateName= "Domo Arigato", npcName= "Perplexed Reforger" },
+                -- { fateName= "Domo Arigato", npcName= "Perplexed Reforger" },
                 { fateName= "Old Stampeding Grounds", npcName= "Driftdowns Reforger" },
                 { fateName= "Pulling the Wool", npcName= "Panicked Courier" }
             },
@@ -676,7 +676,9 @@ FatesData = {
                 "A Scythe to an Axe Fight",
                 "(Got My Eye) Set on You"
             },
-            blacklistedFates= {}
+            blacklistedFates= {
+                "Domo Arigato"
+            }
         }
     },
     {
@@ -901,6 +903,7 @@ function HandleUnexpectedCombat()
             yield("/battletarget")
         end
         yield("/wait 1")
+        HandleDeath()
     end
 
     if not GetCharacterCondition(CharacterCondition.inCombat) then
@@ -1820,16 +1823,16 @@ while true do
                 end
             end
             if GetTargetName() == "Summoning Bell" and GetDistanceToTarget() <= 4.5 then
-            yield("/wait 0.5")
-            yield("/interact")
-            if IsAddonVisible("RetainerList") then
-            yield("/ays e")
-            yield("/echo [FATE] Processing retainers")
-            yield("/wait 1")
-            end
+                yield("/wait 0.5")
+                yield("/interact")
+                if IsAddonVisible("RetainerList") then
+                    yield("/ays e")
+                    yield("/echo [FATE] Processing retainers")
+                    yield("/wait 1")
+                end
             end
         
-            while ARRetainersWaitingToBeProcessed() == true do
+            while ARRetainersWaitingToBeProcessed() do
                 yield("/wait 1")
             end
 
@@ -1839,7 +1842,7 @@ while true do
             yield("/wait 1")
             yield("/callback RetainerList true -1")
             yield("/wait 1")
-            if IsAddonVisible("RetainerList") then
+            while IsAddonVisible("RetainerList") do
                 yield("/callback RetainerList true -1")
                 yield("/wait 1")
             end
