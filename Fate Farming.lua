@@ -1203,7 +1203,7 @@ function InteractWithFateNpc(fate)
         repeat -- break conditions in case someone snipes the interact before you
             yield("/interact")
             yield("/wait 1")
-        until IsAddonVisible("Talk") or IsInFate() or not IsFateActive(fate.fateId)
+        until IsAddonVisible("Talk") or IsAddonVisible("SelectYesno") or IsInFate() or not IsFateActive(fate.fateId)
         while GetCharacterCondition(CharacterCondition.occupied32) do
             LogInfo("Occupied by NPC")
             if IsAddonVisible("Talk") then
@@ -1211,7 +1211,7 @@ function InteractWithFateNpc(fate)
             elseif IsAddonVisible("SelectYesno") then
                 yield("/callback SelectYesno true 0")
             end
-            yield("/wait 0.1")
+            yield("/wait 0.5")
         end
         yield("/wait 1") -- wait to register
         while GetTargetName() == fate.npcName do
@@ -1823,8 +1823,8 @@ while true do
             end
             yield("/target Summoning Bell")
             while GetTargetName() == "" do
-            yield("/target Summoning Bell")
-            end 
+                yield("/target Summoning Bell")
+            end
             while GetTargetName() == "Summoning Bell" and GetDistanceToTarget() > 4.5 do
                 PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
                 yield("/wait 1")
