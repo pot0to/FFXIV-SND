@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.14  *
+  *  1.1.15  *
   ***********
-    -> 1.1.14   Update order of operations, removed random y
+    -> 1.1.15   Updated random point generation
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -113,7 +113,7 @@ slots = 5                  --how much inventory space before turning in
 ChocoboS = true                 --should it Activate the Chocobo settings in Pandora (to summon it)
 MountToUse = "mount roulette"   --The mount you'd like to use when flying between fates, leave empty for mount roulette 
 
-UsePandoraSync = true
+UsePandoraSync = false
 --Change this value for how much echos u want in chat 
 --2 is the fate your Moving to and Bicolor gems amount
 --1 is only Bicolor gems
@@ -560,15 +560,16 @@ FatesData = {
                 { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
                 { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
                 { fateName= "Birds Up", npcName= "Coffee Farmer" },
-                { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" },
-                { fateName= "Fire Suppression", npcName= "Tsivli Stoutstrider" },
-                { fateName= "Wolf Parade", npcName= "Pelupelu Peddler" },
+                { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" }
             },
             bossFates= {
-                "Panaq Attack"
+                "Panaq Attack",
+                "Big Storm Coming",
+                "Fire Suppression"
             },
             blacklistedFates= {
-                "Young Volcanoes"
+                "Young Volcanoes",
+                "Wolf Parade" -- multiple Pelupelu Peddler npcs, rng whether it tries to talk to the right one
             }
         }
     },
@@ -1076,32 +1077,25 @@ function SelectNextFate()
     return nextFate
 end
 
-function random_direct()
-    --math.random will return -1,0,1 so i'm working around it to get only a -1 or 1 by making a table
-    local rng_dir = {-1,1}
-    return rng_dir[math.random(1,2)]
+function RandomAdjustCoordinates(x, y, z, maxDistance)
+    local angle = math.random() * 2 * math.pi
+    local x_adjust = maxDistance * math.random()
+    local z_adjust = maxDistance * math.random()
+
+    local randomX = x + (x_adjust * math.cos(angle))
+    local randomZ = z + (z_adjust * math.sin(angle))
+
+    return randomX, randomZ
 end
 
 --Paths to the Fate NPC Starter
 function MoveToNPC(fate)
     LogInfo("MoveToNPC function")
     if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
-        local npc_x = GetTargetRawXPos() + (3 * random_direct())
-        local npc_y = GetTargetRawYPos()
-        local npc_z = GetTargetRawZPos() + (3 * random_direct())
+        local npc_y = GetTargetRawYPos() + 5
+        local npc_x, npc_z = RandomAdjustCoordinates(GetTargetRawXPos(), npc_y, GetTargetRawZPos(), 5)
 
-        local i = 5
-        local nearestLandX = QueryMeshNearestPointX(npc_x,npc_y,npc_z,i,i)
-        if nearestLandX == nil then
-            nearestLandX = npc_x
-        end
-        local nearestLandY = npc_y + 5
-        local nearestLandZ = QueryMeshNearestPointZ(npc_x,npc_y,npc_z,i,i)
-        if nearestLandZ == nil then
-            nearestLandZ = npc_z
-        end
-
-        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, GetCharacterCondition(CharacterCondition.flying))
+        PathfindAndMoveTo(npc_x, npc_y, npc_z, GetCharacterCondition(CharacterCondition.flying))
     end
 
 end
@@ -1111,34 +1105,14 @@ function MoveToFate(nextFate)
     LogInfo("[FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
     yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
 
-    local angle = math.random() * 2 * math.pi
-    local radius = 30 * math.random() -- SND doesn't expose the fate radius so just setting a hard value here to be a safe radius of 25
-    local randomX = nextFate.x + (radius * math.cos(angle))
+    local nearestLandX, nearestLandZ = RandomAdjustCoordinates(nextFate.x, nextFate.y, nextFate.z, 30)
     local randomY = nextFate.y + 10
-    local randomZ = nextFate.z + (radius * math.sin(angle))
-
-    LogInfo("[FATE] Math checks out")
-    LogInfo("[FATE] Fate location: "..nextFate.x..", "..nextFate.y..", "..nextFate.z)
-    LogInfo("[FATE] Random point: "..randomX..", "..randomY..", "..randomZ)
-
-    local i = 5
-    local nearestLandX = QueryMeshNearestPointX(randomX, randomY, randomZ,i,i)
-    if nearestLandX == nil then
-        nearestLandX = nextFate.x
-    end
-    local nearestLandZ = QueryMeshNearestPointZ(randomX, randomY, randomZ,i,i)
-    if nearestLandZ == nil then
-        nearestLandZ = nextFate.z
-    end
-
-    LogInfo("[FATE] Queried nearest points")
-    LogInfo("[FATE] Nearest points are: "..nearestLandX..", "..randomY..", "..nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, randomY, nearestLandZ)
     end
 
-    LogInfo("[FATE] Generated random coordinates in fate: "..randomX..", "..randomY..", "..randomZ)
+    LogInfo("[FATE] Generated random coordinates in fate: "..nearestLandX..", "..randomY..", "..nearestLandZ)
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -1156,7 +1130,7 @@ function MoveToFate(nextFate)
     end
 
     if not IsInFate() then
-        LogInfo("[FATE] Moving to "..nearestLandX..", "..nextFate.y..", "..nearestLandZ)
+        LogInfo("[FATE] Moving to "..nearestLandX..", "..randomY..", "..nearestLandZ)
         yield("/vnavmesh stop")
         yield("/wait 1")
         PathfindAndMoveTo(nearestLandX, randomY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
@@ -1383,7 +1357,7 @@ end
 
 function antistuck()
     LogInfo("[FATE] Entered antistuck")
-    stuck = 0
+    local stuck = 0
     PX = GetPlayerRawXPos()
     PY = GetPlayerRawYPos()
     PZ = GetPlayerRawZPos()
@@ -1408,11 +1382,10 @@ function antistuck()
     end
 
     if PX == PXX and PY == PYY and PZ == PZZ then
-        while GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
+        while HasTarget() and GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
-            local enemy_x = GetTargetRawXPos() + (3 * random_direct())
-            local enemy_y = GetTargetRawYPos()
-            local enemy_z = GetTargetRawZPos() + (3 * random_direct())
+            local enemy_x, enemy_z = RandomAdjustCoordinates(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), 3)
+            local enemy_y = GetTargetRawYPos() + 3
             if PathIsRunning() == false and GetCharacterCondition(4, false) then 
                 LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
                 yield("/vnavmesh stop")
@@ -1425,14 +1398,13 @@ function antistuck()
                 yield("/wait 1")
                 PathfindAndMoveTo(enemy_x, enemy_y, enemy_z, true)
             end
-            yield("/wait 0.5")
+            yield("/wait 1")
             stuck = stuck + 1
         end
         if stuck >= 20 then
             yield("/vnavmesh stop")
             yield("/wait 1")
         end
-        stuck = 0
     end
 end
 
