@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.15  *
+  *  1.1.16  *
   ***********
-    -> 1.1.15   Updated random point generation
+    -> 1.1.16   Removed nexus arcade teleport
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -607,17 +607,17 @@ FatesData = {
                 "Escape Shroom",
             },
             otherNpcFates= {
-                --{ fateName= "Could've Found Something Bigger", npcName= "Xbr'aal Hunter" }, 2 npcs names same thing....
+                --{ fateName= , npcName= "Xbr'aal Hunter" }, 2 npcs names same thing....
                 { fateName= "Le Selva se lo Llevó", npcName= "Xbr'aal Hunter" },
                 { fateName= "Stabbing Gutward", npcName= "Doppro Spearbrother" },
-                --{ fateName= "Stick it to the Mantis", npcName= "Xbr'aal Sentry" }, -- 2 npcs named same thing.....
-                { fateName= "Porting Is Such Sweet Sorrow", npcName= "Hoobigo Porter" },
+                --{ fateName= , npcName= "Xbr'aal Sentry" }, -- 2 npcs named same thing.....
             },
             bossFates= {
                 "Moths are Tough"
             },
             blacklistedFates= {
                 "The Departed",
+                "Porting Is Such Sweet Sorrow" -- defence fate
             }
         }
     },
@@ -677,7 +677,6 @@ FatesData = {
                 "(Got My Eye) Set on You"
             },
             blacklistedFates= {
-                -- "Domo Arigato"
             }
         }
     },
@@ -1148,14 +1147,10 @@ function IsFateActive(fateId)
 end
 
 function InteractWithFateNpc(fate)
-    while not IsInFate() and IsFateActive(fate.fateId) do
+    while not IsInFate() and IsFateActive(fate.fateId) and IsFateActive(fate.fateId) do
         yield("/wait 1")
 
         HandleUnexpectedCombat()
-
-        if not IsFateActive(fate.fateId) then
-            break
-        end
         
         -- if target is already selected earlier during pathing, avoids having to target and move again
         while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) do
@@ -1448,12 +1443,12 @@ function PurchaseBicolorVouchers(bicolorGemCount)
                 if not IsInZone(1186) then
                     TeleportTo("Solution Nine")
                 end
-                yield("/wait 1")
-                yield("/li Nexus Arcade")
-                yield("/wait 5") -- lifestream takes a second to initiate
-                while GetCharacterCondition(CharacterCondition.transition) or GetCharacterCondition(CharacterCondition.occupied32) do
-                    yield("/wait 1")
-                end
+                -- yield("/wait 1")
+                -- yield("/li Nexus Arcade")
+                -- yield("/wait 5") -- lifestream takes a second to initiate
+                -- while GetCharacterCondition(CharacterCondition.transition) or GetCharacterCondition(CharacterCondition.occupied32) do
+                --     yield("/wait 1")
+                -- end
                 PathfindAndMoveTo(-198.466, 0.922, -6.955)
                 npcName = "Beryl"
             end
