@@ -1079,9 +1079,10 @@ function RandomAdjustCoordinates(x, y, z, maxDistance)
     local z_adjust = maxDistance * math.random()
 
     local randomX = x + (x_adjust * math.cos(angle))
+    local randomY = y + maxDistance
     local randomZ = z + (z_adjust * math.sin(angle))
 
-    return randomX, randomZ
+    return randomX, randomY, randomZ
 end
 
 --Paths to the Fate NPC Starter
@@ -1089,17 +1090,19 @@ function MoveToNPC(fate)
     LogInfo("MoveToNPC function")
     yield("/target "..CurrentFate.npcName)
     if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
-        local npc_y = fate.x + 5
-        local npc_x, npc_z = RandomAdjustCoordinates(GetTargetRawXPos(), npc_y, GetTargetRawZPos(), 5)
+        local npc_x, npc_y, npc_z = RandomAdjustCoordinates(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), 5)
 
         PathfindAndMoveTo(npc_x, npc_y, npc_z, GetCharacterCondition(CharacterCondition.flying))
     end
-    while not IsInFate() do
-        yield("/wait 1")
-    end
-    while IsInFate and GetTargetName() == fate.npcName do
-        LogInfo("Attempting to clear target.")
-        ClearTarget()
+
+    while PathfindInProgress() or PathIsRunning() do
+        if IsInFate() then
+            while GetTargetName() == fate.npcName do
+                LogInfo("Attempting to clear target.")
+                ClearTarget()
+                yield("/wait 1")
+            end
+        end
         yield("/wait 1")
     end
 end
@@ -1111,14 +1114,13 @@ function MoveToFate(nextFate)
         yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
     end
 
-    local nearestLandX, nearestLandZ = RandomAdjustCoordinates(nextFate.x, nextFate.y, nextFate.z, 30)
-    local randomY = nextFate.y + 10
+    local nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(nextFate.x, nextFate.y, nextFate.z, 30)
 
     if HasPlugin("ChatCoordinates") then
-        SetMapFlag(SelectedZone.zoneId, nearestLandX, randomY, nearestLandZ)
+        SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
     end
 
-    LogInfo("[FATE] Generated random coordinates in fate: "..nearestLandX..", "..randomY..", "..nearestLandZ)
+    LogInfo("[FATE] Generated random coordinates in fate: "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
 
     local playerPosition = {
         x = GetPlayerRawXPos(),
@@ -1136,10 +1138,10 @@ function MoveToFate(nextFate)
     end
 
     if not IsInFate() then
-        LogInfo("[FATE] Moving to "..nearestLandX..", "..randomY..", "..nearestLandZ)
+        LogInfo("[FATE] Moving to "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
         yield("/vnavmesh stop")
         yield("/wait 1")
-        PathfindAndMoveTo(nearestLandX, randomY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
+        PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
     end
 end
 
@@ -1385,8 +1387,7 @@ function antistuck()
     if PX == PXX and PY == PYY and PZ == PZZ then
         while HasTarget() and GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
             LogInfo("[FATE] Looping antistuck")
-            local enemy_x, enemy_z = RandomAdjustCoordinates(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), 3)
-            local enemy_y = GetTargetRawYPos() + 3
+            local enemy_x, enemy_y, enemy_z = RandomAdjustCoordinates(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), 3)
             if not PathIsRunning() then 
                 LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
                 yield("/vnavmesh stop")
@@ -1584,7 +1585,6 @@ while true do
 
     ---------------------------- While vnavmesh is Moving ------------------------------
 
-    local fateNPCNav = false
     -- while vnavmesh is moving to a fate
     while PathIsRunning() or PathfindInProgress() and not IsInFate() do
         
@@ -1594,11 +1594,10 @@ while true do
             yield("/wait 0.3")
         end
 
-        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 then
             -- yield("/target "..CurrentFate.npcName)
             -- if HasTarget() and GetTargetName()==CurrentFate.npcName then
             MoveToNPC(CurrentFate)
-            fateNPCNav = true
             -- end
         end
 
@@ -1624,16 +1623,8 @@ while true do
           PathIsRunning() and PathfindInProgress()
     do
         yield("/wait 0.1")
-        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
-            yield("/target "..CurrentFate.npcName)
-            if HasTarget() and GetTargetName()==CurrentFate.npcName then
-                MoveToNPC(CurrentFate)
-                fateNPCNav = true
-            end
-        end
-        if timeout_check(timeout_start,10) then
-            yield("/vnav stop")
-            break
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 then
+            MoveToNPC(CurrentFate)
         end
     end
 
@@ -1767,7 +1758,7 @@ while true do
     end
 
     --Retainer Process
-    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and
+    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and GetInventoryFreeSlotCount() > 1 and
        (not WaitIfBonusBuff or not (HasStatusId(1288) or HasStatusId(1289))) then
         LogInfo("[FATE] Handling retainers...")
         if ARRetainersWaitingToBeProcessed() == true then
@@ -1809,7 +1800,7 @@ while true do
                 end
             end
         
-            while ARRetainersWaitingToBeProcessed() do
+            while ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 do
                 yield("/wait 1")
             end
 
