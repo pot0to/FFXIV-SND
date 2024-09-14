@@ -1589,12 +1589,12 @@ while true do
     while PathIsRunning() or PathfindInProgress() and not IsInFate() do
         
         -- if mounted on land, jump to fly
-        if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then 
+        if GetCharacterCondition(CharacterCondition.mounted) and not GetCharacterCondition(CharacterCondition.flying) and HasFlightUnlocked(SelectedZone.zoneId) then
             yield("/gaction jump")
             yield("/wait 0.3")
         end
 
-        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 then
+        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not IsInFate() then
             -- yield("/target "..CurrentFate.npcName)
             -- if HasTarget() and GetTargetName()==CurrentFate.npcName then
             MoveToNPC(CurrentFate)
