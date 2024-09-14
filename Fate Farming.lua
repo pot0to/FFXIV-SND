@@ -8,9 +8,9 @@
 
   ***********
   * Version *
-  *  1.1.16  *
+  *  1.1.17  *
   ***********
-    -> 1.1.16   Removed nexus arcade teleport
+    -> 1.1.17   Added echo config back, adjusted antistuck timings
     -> 1.1.10   Merged random point in fate by scoobwrx
     -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
     -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
@@ -113,12 +113,11 @@ slots = 5                  --how much inventory space before turning in
 ChocoboS = true                 --should it Activate the Chocobo settings in Pandora (to summon it)
 MountToUse = "mount roulette"   --The mount you'd like to use when flying between fates, leave empty for mount roulette 
 
-UsePandoraSync = false
+Echo = 2
 --Change this value for how much echos u want in chat 
---2 is the fate your Moving to and Bicolor gems amount
---1 is only Bicolor gems
---0 is nothing
---echos will appear after it found a new fate 
+--0 no echos
+--1 echo how many bicolor gems you have after every fate
+--2 echo how many bicolor gems you have after every fate and the next fate you're moving to
   
 --[[
   
@@ -766,11 +765,7 @@ elseif ChocoboS == false then
 end
 
 --Fate settings
-if UsePandoraSync then
-    PandoraSetFeatureState("Auto-Sync FATEs", true)
-else
-    PandoraSetFeatureState("Auto-Sync FATEs", false)
-end
+PandoraSetFeatureState("Auto-Sync FATEs", true)
 PandoraSetFeatureState("FATE Targeting Mode", true)
 PandoraSetFeatureState("Action Combat Targeting", false)
 yield("/wait 0.5")
@@ -1067,7 +1062,9 @@ function SelectNextFate()
 
     if nextFate == nil then
         LogInfo("[FATE] No eligible fates found.")
-        yield("/echo [FATE] No eligible fates found.")
+        if Echo == 2 then
+            yield("/echo [FATE] No eligible fates found.")
+        end
     else
         LogInfo("[FATE] Final selected fate #"..nextFate.fateId.." "..nextFate.fateName)
     end
@@ -1090,19 +1087,29 @@ end
 --Paths to the Fate NPC Starter
 function MoveToNPC(fate)
     LogInfo("MoveToNPC function")
+    yield("/target "..CurrentFate.npcName)
     if HasTarget() and GetTargetName()==fate.npcName and GetDistanceToTarget() > 5 then
-        local npc_y = GetTargetRawYPos() + 5
+        local npc_y = fate.x + 5
         local npc_x, npc_z = RandomAdjustCoordinates(GetTargetRawXPos(), npc_y, GetTargetRawZPos(), 5)
 
         PathfindAndMoveTo(npc_x, npc_y, npc_z, GetCharacterCondition(CharacterCondition.flying))
     end
-
+    while not IsInFate() do
+        yield("/wait 1")
+    end
+    while IsInFate and GetTargetName() == fate.npcName do
+        LogInfo("Attempting to clear target.")
+        ClearTarget()
+        yield("/wait 1")
+    end
 end
 
 --Paths to the Fate
 function MoveToFate(nextFate)
     LogInfo("[FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
-    yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
+    if Echo == 2 then
+        yield("/echo [FATE] Moving to fate #"..nextFate.fateId.." "..nextFate.fateName)
+    end
 
     local nearestLandX, nearestLandZ = RandomAdjustCoordinates(nextFate.x, nextFate.y, nextFate.z, 30)
     local randomY = nextFate.y + 10
@@ -1154,9 +1161,6 @@ function InteractWithFateNpc(fate)
         
         -- if target is already selected earlier during pathing, avoids having to target and move again
         while (not HasTarget() or GetTargetName()~=fate.npcName) and not IsInFate() and IsFateActive(fate.fateId) do
-            yield("/echo [FATE] Searching for NPC target")
-            -- PathfindAndMoveTo(target.x, target.y, target.z)
-            -- yield("/target "..target.npcName)
             yield("/target "..fate.npcName)
             yield("/wait 1")
             
@@ -1182,23 +1186,23 @@ function InteractWithFateNpc(fate)
             end
             yield("/wait 0.5")
         end
-        yield("/wait 1") -- wait to register
         while GetTargetName() == fate.npcName do
             LogInfo("Attempting to clear target.")
             ClearTarget()
             yield("/wait 1")
         end
+        yield("/wait 1") -- wait to register
     end
+
     yield("/wait 1")
     yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
-    yield("/echo [FATE] Fate begun")
     yield("/wait "..fatewait)
     LogInfo("[FATE] Exiting InteractWithFateNpc")
 end
 
 --Paths to the enemy (for Meele)
 function EnemyPathing()
-    while GetDistanceToTarget() > 3.5 do
+    while HasTarget() and GetDistanceToTarget() > 3.5 do
         local enemy_x = GetTargetRawXPos()
         local enemy_y = GetTargetRawYPos()
         local enemy_z = GetTargetRawZPos()
@@ -1296,7 +1300,6 @@ function TurnOnCombatMods()
     yield("/wait 1")
 
     if not bossModAIActive and useBM then
-
         local ClassJob = GetClassJobId()
         local MaxDistance = MeleeDist --default to melee distance
         --ranged and casters have a further max distance so not always running all way up to target
@@ -1326,7 +1329,10 @@ function TurnOnCombatMods()
             --yield("/vbmai followoutofcombat on")
         end
         bossModAIActive = true
+    elseif not useBM then
+        TurnOffCombatMods()
     end
+
     yield("/wait 1")
 end
 
@@ -1356,7 +1362,7 @@ function antistuck()
     PX = GetPlayerRawXPos()
     PY = GetPlayerRawYPos()
     PZ = GetPlayerRawZPos()
-    yield("/wait 3")
+    yield("/wait 10")
     PXX = GetPlayerRawXPos()
     PYY = GetPlayerRawYPos()
     PZZ = GetPlayerRawZPos()
@@ -1364,15 +1370,15 @@ function antistuck()
     local ClassJob = GetClassJobId()
     local AntiStuckDist = MeleeDist-- default to melee distance
     if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
-       ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
-       ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
-       ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
-       ClassJob == 31 or -- Machinist
-       ClassJob == 33 or -- Astrologian
-       ClassJob == 35 or -- Red Mage
-       ClassJob == 38 or -- Dancer
-       ClassJob == 40 or -- Sage
-       ClassJob == 42 then -- Pictomancer
+        ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
+        ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
+        ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
+        ClassJob == 31 or -- Machinist
+        ClassJob == 33 or -- Astrologian
+        ClassJob == 35 or -- Red Mage
+        ClassJob == 38 or -- Dancer
+        ClassJob == 40 or -- Sage
+        ClassJob == 42 then -- Pictomancer
         AntiStuckDist = RangedDist -- max distance for ranged to attack is 25.5
     end
 
@@ -1381,19 +1387,13 @@ function antistuck()
             LogInfo("[FATE] Looping antistuck")
             local enemy_x, enemy_z = RandomAdjustCoordinates(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), 3)
             local enemy_y = GetTargetRawYPos() + 3
-            if PathIsRunning() == false and GetCharacterCondition(4, false) then 
+            if not PathIsRunning() then 
                 LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
                 yield("/vnavmesh stop")
                 yield("/wait 1")
                 PathfindAndMoveTo(enemy_x, enemy_y, enemy_z)
             end
-            if not PathIsRunning() and GetCharacterCondition(4, true) then
-                LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
-                yield("/vnavmesh stop")
-                yield("/wait 1")
-                PathfindAndMoveTo(enemy_x, enemy_y, enemy_z, true)
-            end
-            yield("/wait 1")
+            yield("/wait 0.1")
             stuck = stuck + 1
         end
         if stuck >= 20 then
@@ -1405,7 +1405,9 @@ end
 
 function HandleDeath()
     if GetCharacterCondition(CharacterCondition.dead) then --Condition Dead
-        yield("/echo [FATE] You have died. Returning to home aetheryte.")
+        if Echo then
+            yield("/echo [FATE] You have died. Returning to home aetheryte.")
+        end
         while not IsAddonVisible("SelectYesno") do --rez addon wait
             yield("/wait 1")
         end
@@ -1432,15 +1434,15 @@ end
 function PurchaseBicolorVouchers(bicolorGemCount)
     local npcName = ""
     if ShouldExchange and bicolorGemCount >= 1400 then
-        if not PathIsRunning() or not PathfindInProgress() then
+        if not PathIsRunning() and not PathfindInProgress() then
             if OldV then
-                if not IsInZone(962) then
+                while not IsInZone(962) do
                     TeleportTo("Old Sharlayan")
                 end
                 PathfindAndMoveTo(74.17, 5.15, -37.44)
                 npcName = "Gadfrid"
             else
-                if not IsInZone(1186) then
+                while not IsInZone(1186) do
                     TeleportTo("Solution Nine")
                 end
                 -- yield("/wait 1")
@@ -1593,17 +1595,19 @@ while true do
         end
 
         if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 and GetDistanceToPoint(CurrentFate.x, CurrentFate.y, CurrentFate.z) <= 50 and not fateNPCNav then
-            yield("/target "..CurrentFate.npcName)
-            if HasTarget() and GetTargetName()==CurrentFate.npcName then
-                MoveToNPC(CurrentFate)
-                fateNPCNav = true
-            end
+            -- yield("/target "..CurrentFate.npcName)
+            -- if HasTarget() and GetTargetName()==CurrentFate.npcName then
+            MoveToNPC(CurrentFate)
+            fateNPCNav = true
+            -- end
         end
 
         --Stops Moving to dead Fates or change paths to better fates
         NextFate = SelectNextFate()
         if NextFate~=nil and CurrentFate.fateId ~= NextFate.fateId then
-            yield("/echo [FATE] Stopped pathing to #"..CurrentFate.fateId.." "..CurrentFate.fateName..", higher priority fate found: #"..NextFate.fateId.." "..NextFate.fateName)
+            if Echo == 2 then
+                yield("/echo [FATE] Stopped pathing to #"..CurrentFate.fateId.." "..CurrentFate.fateName..", higher priority fate found: #"..NextFate.fateId.." "..NextFate.fateName)
+            end
             yield("/vnavmesh stop")
             yield("/wait 1")
             CurrentFate = NextFate
@@ -1641,10 +1645,6 @@ while true do
     -- need to talk to npc to start fate
     if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 then
         InteractWithFateNpc(CurrentFate)
-    else
-        if not UsePandoraSync then
-            yield("/lsync")
-        end
     end
 
     -------------------------------Engage Fate Combat--------------------------------------------
@@ -1663,8 +1663,8 @@ while true do
 
         --Paths to enemys when Bossmod is disabled
         if not useBM then
-            EnemyPathing()
             yield("/vnavmesh stop")
+            EnemyPathing()
             yield("/wait 1")
         end
         AvailableFateCount = 0
@@ -1846,11 +1846,10 @@ while true do
 
     ---------------------------Notification tab--------------------------------------
     local bicolorGemCount = GetItemCount(26807)
-    if not GemAnnouncementLock then
+    if not GemAnnouncementLock and Echo >= 1 then
         GemAnnouncementLock = true
         if bicolorGemCount > 1400 then
             yield("/echo [FATE] You're almost capped with "..tostring(bicolorGemCount).."/1500 gems! <se.3>")
-            yield("/wait 1")
         else
             yield("/echo [FATE] Gems: "..tostring(bicolorGemCount).."/1500")
         end
