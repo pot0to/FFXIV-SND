@@ -8,10 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.4  *
+*  2.0.5  *
 ***********
-    -> 2.0.4    Fixed repair function
-    -> ...      Added regions, Cleaned up food check, Added materia extraction back
+    -> 2.0.5    Added checks for CurrentFate == nil while moving and interacting with npc
+                Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
     -> 2.0.0    State system
 
 *********************
@@ -1151,7 +1151,7 @@ function MoveToFate()
         return
     end
 
-    if CurrentFate == nil or not IsFateActive(CurrentFate.fateId) then
+    if CurrentFate == nil then
         yield("/vnav stop")
         State = CharacterState.ready
         LogInfo("State Change: Ready")
@@ -1225,11 +1225,13 @@ function MoveToFate()
 end
 
 function InteractWithFateNpc()
-    LogInfo("Fate Active Status: "..tostring(IsFateActive(CurrentFate.fateId)))
 
     if IsInFate() or GetCharacterCondition(CharacterCondition.inCombat) then
         State = CharacterState.inCombat
         LogInfo("State Change: InCombat")
+    elseif CurrentFate == nil then
+        State = CharacterState.ready
+        LogInfo("State Change: Ready")
     elseif PathfindInProgress() or PathIsRunning() then
         if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 10 then
             yield("/vnav stop")
