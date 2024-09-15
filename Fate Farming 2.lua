@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.5  *
+*  2.0.6  *
 ***********
-    -> 2.0.5    Added checks for CurrentFate == nil while moving and interacting with npc
+    -> 2.0.6    Added check for zones with only one instance
+                Added checks for CurrentFate == nil while moving and interacting with npc,
                 Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
     -> 2.0.0    State system
 
@@ -1461,9 +1462,11 @@ function Ready()
     elseif ShouldExchange and (BicolorGemCount >= 1400) then
         State = CharacterState.exchangingVouchers
         LogInfo("State Change: ExchangingVouchers")
-    elseif CurrentFate == nil then
+    elseif CurrentFate == nil and EnableChangeInstance and GetZoneInstance() > 0 then
         State = CharacterState.changingInstances
         LogInfo("State Change: ChangingInstances")
+    elseif CurrentFate == nil then
+        yield("/wait 10")
     else
         State = CharacterState.movingToFate
         LogInfo("State Change: MovingtoFate "..CurrentFate.fateName)
