@@ -1053,8 +1053,8 @@ function ChangeInstance()
         end
 
         if GetCharacterCondition(CharacterCondition.mounted) then
-            LogInfo("[FATE] Dismounting...")
-            Dismount()
+            State = CharacterState.dismounting
+            LogInfo("State Change: Dismounting")
         end
 
         yield("/lockon")
@@ -1081,37 +1081,52 @@ function ChangeInstance()
 end
 
 function Mount()
-    if GetCharacterCondition(CharacterCondition.mounted) then
+    if GetCharacterCondition(CharacterCondition.flying) then
         State = CharacterState.movingToFate
         LogInfo("State Change: MovingToFate "..CurrentFate.fateName)
+    elseif GetCharacterCondition(CharacterCondition.mounted) then
+        yield("/gaction jump")
     else
-        if not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.mounting) then
+        if not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.mounting) and not GetCharacterCondition(CharacterCondition.jumping) then
             if MountToUse == "mount roulette" then
                 yield('/gaction "mount roulette"')
             else
                 yield('/mount "' .. MountToUse)
             end
         end
-        yield("/wait 1")
     end
+    yield("/wait 1")
 end
 
 function Dismount()
+    LogInfo("dismount entered")
     if PathIsRunning() or PathfindInProgress() then
         yield("/vnav stop")
+        return
     end
 
-    -- characters that are flying are also mounted
-    local retries = 0
-    while GetCharacterCondition(CharacterCondition.mounted) do
+    if GetCharacterCondition(CharacterCondition.flying) then
+        local x1 = GetPlayerRawXPos()
+        local y1 = GetPlayerRawYPos()
+        local z1 = GetPlayerRawZPos()
+
         yield('/ac dismount')
         yield("/wait 2")
 
-        if retries >= 3 then
-            antistuck()
-        end
+        local x2 = GetPlayerRawXPos()
+        local y2 = GetPlayerRawYPos()
+        local z2 = GetPlayerRawZPos()
 
-        retries = retries + 1
+        if GetCharacterCondition(CharacterCondition.flying) and DistanceBetween(x1, y1, z1, x2, y2, z2) < 2 then
+            local random_x, random_y, random_z = RandomAdjustCoordinates(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), 10)
+            PathfindAndMoveTo(random_x, random_y, random_z)
+            yield("/wait 2")
+        end
+    elseif GetCharacterCondition(CharacterCondition.mounted) then
+        yield('/ac dismount')
+    else
+        State = CharacterState.ready
+        LogInfo("State Change: Ready")
     end
 end
 
@@ -1159,7 +1174,8 @@ function MoveToFate()
 
     if GetDistanceToPoint(CurrentFate.x, GetPlayerRawYPos(), CurrentFate.z) < 30 then
         if GetCharacterCondition(CharacterCondition.mounted) then
-            Dismount()
+            State = CharacterState.dismounting
+            LogInfo("State Change: Dismounting")
             return
         end
         
@@ -1203,8 +1219,11 @@ function MoveToFate()
 end
 
 function InteractWithFateNpc()
+    LogInfo("Fate Active Status: "..tostring(IsFateActive(CurrentFate.fateId)))
+
     if IsInFate() or GetCharacterCondition(CharacterCondition.inCombat) then
         State = CharacterState.inCombat
+        LogInfo("State Change: InCombat")
     elseif PathfindInProgress() or PathIsRunning() then
         if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 10 then
             yield("/vnav stop")
@@ -1323,6 +1342,7 @@ function TurnOnCombatMods()
 end
 
 function TurnOffCombatMods()
+    LogInfo("Turning off combat mods")
     -- no need to turn RSR off
 
     -- turn of BMR so you don't start engaging other mobs
@@ -1365,7 +1385,8 @@ function HandleCombat()
     GemAnnouncementLock = false
     
     if GetCharacterCondition(CharacterCondition.mounted) then
-        Dismount()
+        State = CharacterState.dismounting
+        LogInfo("State Change: Dismounting")
         return
     end
 
@@ -1418,6 +1439,9 @@ function Ready()
     elseif GetCharacterCondition(CharacterCondition.dead) then
         State = CharacterState.dead
         LogInfo("State Change: Dead")
+    elseif NeedsRepair(RepairAmount) then
+        State = CharacterState.repair
+        LogInfo("State Change: Repair")
     elseif ExtractMateria and CanExtractMateria(100) and GetInventoryFreeSlotCount() > 1 then
         State = CharacterState.extractMateria
         LogInfo("State Change: ExtractMateria")
@@ -1615,33 +1639,46 @@ function ProcessRetainers()
 end
 
 function Repair()
-    --Repair function
-    if RepairAmount > 0 and not GetCharacterCondition(CharacterCondition.mounted) then
-        if NeedsRepair(RepairAmount) then
-            while not IsAddonVisible("Repair") do
-                LogInfo("[FATE] Opening repair menu...")
-                yield("/generalaction repair")
-                yield("/wait 0.5")
-            end
-            yield("/callback Repair true 0")
-            yield("/wait 0.1")
-            if IsAddonVisible("SelectYesno") then
-                yield("/callback SelectYesno true 0")
-                yield("/wait 0.1")
-            end
-            while GetCharacterCondition(CharacterCondition.occupiedMateriaExtraction) do
-                LogInfo("[FATE] Repairing...")
-                yield("/wait 1") 
-            end
-            yield("/wait 1")
-            yield("/callback Repair true -1")
-        end
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        State = CharacterState.dismounting
+        LogInfo("State Change: Dismounting")
+        return
     end
+
+    if not NeedsRepair(RepairAmount) then
+        if IsAddonVisible("Repair") then
+            yield("/callback Repair true -1")
+        else
+            State = CharacterState.ready
+            LogInfo("State Change: Ready")
+        end
+        return
+    end
+
+    if GetCharacterCondition(CharacterCondition.occupiedMateriaExtraction) then
+        LogInfo("[FATE] Repairing...")
+        yield("/wait 1") 
+        return
+    end
+
+    if IsAddonVisible("SelectYesno") then
+        yield("/callback SelectYesno true 0")
+        return
+    end
+
+    if not IsAddonVisible("Repair") then
+        LogInfo("[FATE] Opening repair menu...")
+        yield("/generalaction repair")
+        return
+    end
+
+    yield("/callback Repair true 0")
 end
 
 function ExtractMateria()
     if GetCharacterCondition(CharacterCondition.mounted) then
-        Dismount()
+        State = CharacterState.dismounting
+        LogInfo("State Change: Dismounting")
         return
     end
 
@@ -1680,9 +1717,11 @@ CharacterState = {
     movingToFate = MoveToFate,
     interactWithNpc = InteractWithFateNpc,
     mounting = Mount,
+    dismounting = Dismount,
     changingInstances = ChangeInstance,
     inCombat = HandleCombat,
-    extractMateria = ExtractMateria
+    extractMateria = ExtractMateria,
+    repair = Repair
 }
 
 --#endregion Other State Functions
@@ -1725,8 +1764,10 @@ while true do
     if NavIsReady() then
         if GetCharacterCondition(CharacterCondition.dead) then
             State = CharacterState.dead
-        elseif GetCharacterCondition(CharacterCondition.inCombat) and not GetCharacterCondition(CharacterCondition.mounted) then
+            LogInfo("State Change: Dead")
+        elseif State ~= CharacterState.inCombat and GetCharacterCondition(CharacterCondition.inCombat) and not GetCharacterCondition(CharacterCondition.mounted) then
             State = CharacterState.inCombat
+            LogInfo("State Change: InCombat")
         end
 
         if State ~= CharacterState.processRetainers and State ~= CharacterState.inCombat and State ~= CharacterState.exchangingVouchers then
