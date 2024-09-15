@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.1  *
+*  2.0.2  *
 ***********
-    -> 2.0.1    Added materia extraction back
+    -> 2.0.2    Cleaned up food check
+                Added materia extraction back
     -> 2.0.0    State system
 
 *********************
@@ -790,34 +791,6 @@ function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
     end
 end
 
---simple function to check a time limit
-function timeout_check(start, length)
-    if os.clock() - start > length then
-        return true
-    end
-    return false
-end
-
---Wrapper to dismount
-function Dismount()
-    if PathIsRunning() or PathfindInProgress() then
-        yield("/vnav stop")
-    end
-
-    -- characters that are flying are also mounted
-    local retries = 0
-    while GetCharacterCondition(CharacterCondition.mounted) do
-        yield('/ac dismount')
-        yield("/wait 2")
-
-        if retries >= 3 then
-            antistuck()
-        end
-
-        retries = retries + 1
-    end
-end
-
 function TeleportTo(aetheryteName)
     while EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp()) - LastTeleportTimeStamp < 5 do
         LogInfo("[FATE] Too soon since last teleport. Waiting...")
@@ -855,21 +828,22 @@ function Mount()
     end
 end
 
-function HandleUnexpectedCombat()
-    if GetCharacterCondition(CharacterCondition.inCombat) then
-        TurnOnCombatMods()
-    end
-    
-    while GetCharacterCondition(CharacterCondition.inCombat) do
-        if not HasTarget() or GetTargetHP() <= 0 then
-            yield("/battletarget")
-        end
-        yield("/wait 1")
-        HandleDeath()
+function Dismount()
+    if PathIsRunning() or PathfindInProgress() then
+        yield("/vnav stop")
     end
 
-    if not GetCharacterCondition(CharacterCondition.inCombat) then
-        TurnOffCombatMods()
+    -- characters that are flying are also mounted
+    local retries = 0
+    while GetCharacterCondition(CharacterCondition.mounted) do
+        yield('/ac dismount')
+        yield("/wait 2")
+
+        if retries >= 3 then
+            antistuck()
+        end
+
+        retries = retries + 1
     end
 end
 
@@ -1069,31 +1043,20 @@ end
 function MoveToNPC()
     LogInfo("MoveToNPC function")
     yield("/target "..CurrentFate.npcName)
-    if HasTarget() and GetTargetName()==CurrentFate.npcName and GetDistanceToTarget() > 5 then
-        PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying))
+    if HasTarget() and GetTargetName()==CurrentFate.npcName then
+        if GetDistanceToTarget() > 10 then
+            PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying))
+        else
+            yield("/vnav stop")
+        end
         return
     end
 end
 
-function UseFood()
+function FoodCheck()
     --food usage
-    if not (GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition)) then
-        if not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) then
-            while not HasStatusId(CharacterCondition.jumping) and (Food == "" == false) and FoodCheck <= 10 and not GetCharacterCondition(CharacterCondition.casting) and not GetCharacterCondition(CharacterCondition.transition) do
-                while GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) do
-                    yield("/wait 1")
-                end
-                yield("/item " .. Food)
-                yield("/wait 2")
-                FoodCheck = FoodCheck + 1
-            end
-            if FoodCheck >= 10 then
-                yield("/echo [FATE] no Food left <se.1>")
-            end
-            if HasStatusId(48) then
-                FoodCheck = 0
-            end
-        end
+    if not HasStatusId(48) and Food ~= "" then
+        yield("/item " .. Food)
     end
 end
 
@@ -1181,21 +1144,18 @@ function IsFateActive(fateId)
 end
 
 function InteractWithFateNpc()
-    LogInfo("test 1")
     if IsInFate() or GetCharacterCondition(CharacterCondition.inCombat) then
         State = CharacterState.inCombat
     elseif PathfindInProgress() or PathIsRunning() then
-        if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 5 then
+        if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 10 then
             yield("/vnav stop")
         end
-        LogInfo("test 2")
         return
     elseif not IsFateActive(CurrentFate.fateId) then
         State = CharacterState.ready
         LogInfo("State Change: Ready")
         return
     else
-        LogInfo("test 3")
         -- if target is already selected earlier during pathing, avoids having to target and move again
         if (not HasTarget() or GetTargetName()~=CurrentFate.npcName) then
             yield("/target "..CurrentFate.npcName)
@@ -1209,15 +1169,9 @@ function InteractWithFateNpc()
             return
         end
 
-        LogInfo("test")
-
-        if IsAddonVisible("Talk") then
-            LogInfo("test 5")
-        elseif IsAddonVisible("SelectYesno") then
-            LogInfo("test 6")
+        if IsAddonVisible("SelectYesno") then
             yield("/callback SelectYesno true 0")
-        else
-            LogInfo("test 7")
+        elseif not GetCharacterCondition(CharacterCondition.occupied) then
             yield("/interact")
         end
     end
@@ -1383,52 +1337,6 @@ function TurnOffCombatMods()
     end
 end
 
-function antistuck()
-    LogInfo("[FATE] Entered antistuck")
-    local stuck = 0
-    PX = GetPlayerRawXPos()
-    PY = GetPlayerRawYPos()
-    PZ = GetPlayerRawZPos()
-    yield("/wait 10")
-    PXX = GetPlayerRawXPos()
-    PYY = GetPlayerRawYPos()
-    PZZ = GetPlayerRawZPos()
-
-    local ClassJob = GetClassJobId()
-    local AntiStuckDist = MeleeDist-- default to melee distance
-    if ClassJob == 5 or ClassJob == 23 or -- Archer/Bard
-        ClassJob == 6 or ClassJob == 24 or -- Conjurer/White Mage
-        ClassJob == 7 or ClassJob == 25 or -- Thaumaturge/Black Mage
-        ClassJob == 26 or ClassJob == 27 or ClassJob == 28 or -- Arcanist/Summoner/Scholar
-        ClassJob == 31 or -- Machinist
-        ClassJob == 33 or -- Astrologian
-        ClassJob == 35 or -- Red Mage
-        ClassJob == 38 or -- Dancer
-        ClassJob == 40 or -- Sage
-        ClassJob == 42 then -- Pictomancer
-        AntiStuckDist = RangedDist -- max distance for ranged to attack is 25.5
-    end
-
-    if PX == PXX and PY == PYY and PZ == PZZ then
-        while HasTarget() and GetDistanceToTarget() > AntiStuckDist and stuck < 20 do
-            LogInfo("[FATE] Looping antistuck")
-            local enemy_x, enemy_y, enemy_z = RandomAdjustCoordinates(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), 3)
-            if not PathIsRunning() then 
-                LogInfo("[FATE] Moving to enemy "..enemy_x..", "..enemy_y..", "..enemy_z)
-                yield("/vnavmesh stop")
-                yield("/wait 1")
-                PathfindAndMoveTo(enemy_x, enemy_y, enemy_z)
-            end
-            yield("/wait 0.1")
-            stuck = stuck + 1
-        end
-        if stuck >= 20 then
-            yield("/vnavmesh stop")
-            yield("/wait 1")
-        end
-    end
-end
-
 function HandleDeath()
     if GetCharacterCondition(CharacterCondition.dead) then --Condition Dead
         if Echo then
@@ -1530,6 +1438,9 @@ end
 
 function Ready()
     LogInfo("Ready")
+
+    FoodCheck()
+
     if GetCharacterCondition(CharacterCondition.inCombat) or (not PathIsRunning() and IsInFate()) then
         State = CharacterState.inCombat
         LogInfo("State Change: InCombat")
@@ -1773,7 +1684,6 @@ end
 
 GemAnnouncementLock = false
 AvailableFateCount = 0
-FoodCheck = 0
 SetMaxDistance()
 
 local selectedZoneId = GetZoneID()
@@ -1810,6 +1720,8 @@ while true do
     if NavIsReady() then
         if GetCharacterCondition(CharacterCondition.dead) then
             State = CharacterState.dead
+        elseif GetCharacterCondition(CharacterCondition.inCombat) and not GetCharacterCondition(CharacterCondition.mounted) then
+            State = CharacterState.inCombat
         end
 
         if State ~= CharacterState.processRetainers and State ~= CharacterState.inCombat and State ~= CharacterState.exchangingVouchers then
