@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.1.1  *
+*  2.1.2  *
 ***********
-    -> 2.1.1    Removed CurrentFate fate update while interacting with fate npc
+    -> 2.1.2    Added mounted check for MoveToFate unstuck
+                Removed CurrentFate fate update while interacting with fate npc,
                 Add back manual /lsync for npc fates, Add check for if Retainers is false,
                 Closes mini aetheryte window after moving to Nexus Exchange,
                 Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers,
@@ -1164,7 +1165,7 @@ function MoveToFate()
         return
     end
 
-    if PathIsRunning() or PathfindInProgress() then
+    if (PathIsRunning() or PathfindInProgress()) and GetCharacterCondition(CharacterCondition.mounted) then
         local x1 = GetPlayerRawXPos()
         local y1 = GetPlayerRawYPos()
         local z1 = GetPlayerRawZPos()
