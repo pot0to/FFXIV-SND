@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.2  *
+*  2.0.3  *
 ***********
-    -> 2.0.2    Cleaned up food check
+    -> 2.0.3    Added regions
+    -> ...      Cleaned up food check
                 Added materia extraction back
     -> 2.0.0    State system
 
