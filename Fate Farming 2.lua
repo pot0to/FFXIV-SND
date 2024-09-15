@@ -1,42 +1,16 @@
-  --[[
+--[[
 
-  ****************************************
-  *            Fate Farming              * 
-  ****************************************
+****************************************
+*            Fate Farming              * 
+****************************************
 
-  Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
+Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
-  ***********
-  * Version *
-  *  2.0.0  *
-  ***********
-    -> 1.1.17   Added echo config back, adjusted antistuck timings
-    -> 1.1.10   Merged random point in fate by scoobwrx
-    -> 1.1.9    Fixed dismount upon arriving at fate issue, stops trying to mount if gets caught in 2-part fate
-    -> 1.1.7    Fixed edge case when fate npc disappears on your way to talk to them
-    -> 1.1.6    Fixed landing loop
-    -> 1.1.4    Fixed check for (0,y,0) fates
-    -> 1.1.1    Merged mount functions by CurlyWorm
-    -> 1.0.0    Code changes
-                    added pathing priority to prefer bonus fates -> most progress -> fate time left -> by distance
-                    added map flag for next fate
-                    added prioirity targeting for forlorns
-                    added settings for:
-                        - WaitIfBonusBuff
-                        - MinTimeLeftToIgnoreFate
-                        - JoinBossFatesIfActive
-                        - CompletionToJoinBossFate
-                    enabled non-collection fates that require interacting with an npc to start
-                    [dev] rework of internal fate lists, aetheryte lists, character statuses
-    -> 0.2.4    Code changes
-                    added revive upon death (requires "teleport" to be set in the settings)
-                    added GC turn ins
-                Setting changes
-                    added the category Retainer
-                    added 2 new settings for it in the Retainer settings
-                Plugin changes
-                    added Deliveroo in Optional Plugins for turn ins
-
+***********
+* Version *
+*  2.0.0  *
+***********
+    -> 2.0.0    State system
 
 *********************
 *  Required Plugins *
@@ -136,9 +110,9 @@ CharacterCondition = {
     inCombat=26,
     casting=27,
     occupied31=31,
-    occupied32=32,
+    occupiedShopkeeper=32,
     occupied=33,
-    occupied39=39,
+    occupiedMateriaExtraction=39,
     transition=45,
     jumping=48,
     occupiedSummoningBell=50,
@@ -1150,7 +1124,7 @@ function MoveToFate()
         return
     end
 
-    if GetDistanceToPoint(CurrentFate.x, GetPlayerRawYPos(), CurrentFate.z) < 20 then
+    if GetDistanceToPoint(CurrentFate.x, GetPlayerRawYPos(), CurrentFate.z) < 30 then
         if GetCharacterCondition(CharacterCondition.mounted) then
             Dismount()
             return
@@ -1510,7 +1484,7 @@ function ExchangeVouchers()
             else
                 if not HasTarget() or GetTargetName() ~= "Gadfrid" then
                     yield("/target Gadfrid")
-                elseif not GetCharacterCondition(CharacterCondition.occupied32) then
+                elseif not GetCharacterCondition(CharacterCondition.occupiedShopkeeper) then
                     yield("/interact")
                 end
             end
@@ -1531,7 +1505,7 @@ function ExchangeVouchers()
             else
                 if not HasTarget() or GetTargetName() ~= "Beryl" then
                     yield("/target Beryl")
-                elseif not GetCharacterCondition(CharacterCondition.occupied32) then
+                elseif not GetCharacterCondition(CharacterCondition.occupiedShopkeeper) then
                     yield("/interact")
                 end
             end
@@ -1561,6 +1535,9 @@ function Ready()
     elseif GetCharacterCondition(CharacterCondition.dead) then
         State = CharacterState.dead
         LogInfo("State Change: Dead")
+    elseif ExtractMateria and CanExtractMateria(100) and GetInventoryFreeSlotCount() > 1 then
+        State = CharacterState.extractMateria
+        LogInfo("State Change: ExtractMateria")
     elseif CurrentFate == nil and WaitIfBonusBuff and (HasStatusId(1288) or HasStatusId(1289)) then
         yield("/wait 10")
     elseif ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
@@ -1670,7 +1647,7 @@ function Repair()
                 yield("/callback SelectYesno true 0")
                 yield("/wait 0.1")
             end
-            while GetCharacterCondition(CharacterCondition.occupied39) do
+            while GetCharacterCondition(CharacterCondition.occupiedMateriaExtraction) do
                 LogInfo("[FATE] Repairing...")
                 yield("/wait 1") 
             end
@@ -1681,59 +1658,35 @@ function Repair()
 end
 
 function ExtractMateria()
-    --Materia Extraction function
-    if ExtractMateria and not GetCharacterCondition(CharacterCondition.mounted) then
-        if CanExtractMateria(100) then
-            yield("/generalaction \"Materia Extraction\"")
-            yield("/waitaddon Materialize")
-            while CanExtractMateria(100) == true and GetInventoryFreeSlotCount() > 1 do
-                LogInfo("[FATE] Extracting materia...")
-                if not IsAddonVisible("Materialize") then
-                    yield("/generalaction \"Materia Extraction\"")
-                    yield("/wait 0.5")
-                end
-                while not IsAddonVisible("Materialize") do
-                    yield("/wait 0.5")
-                end
-                yield("/pcall Materialize true 2")
-                yield("/wait 0.5")
-                if IsAddonVisible("MaterializeDialog") then
-                    yield("/pcall MaterializeDialog true 0")
-                    yield("/wait 0.1")
-                end
-                while GetCharacterCondition(39) do
-                    yield("/wait 0.5")
-                end
-            end 
-            yield("/wait 1")
-            yield("/pcall Materialize true -1")
-            yield("/echo [FATE] Extracted all materia")
-            yield("/wait 1")
-        end
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        Dismount()
+        return
     end
 
-    if CanExtractMateria(100) and Extract and not GetCharacterCondition(CharacterCondition.casting) then
-        yield("/generalaction \"Materia Extraction\"")
-        yield("/waitaddon Materialize")
-        while CanExtractMateria(100) == true and not GetCharacterCondition(CharacterCondition.casting) and GetInventoryFreeSlotCount() > 1 do
-            LogInfo("[FATE] Extracting materia 2...")
-            if not IsAddonVisible("Materialize") then
-                yield("/generalaction \"Materia Extraction\"")
-            end
-                yield("/pcall Materialize true 2")
-                yield("/wait 0.5")
-            if IsAddonVisible("MaterializeDialog") then
-                yield("/pcall MaterializeDialog true 0")
-                yield("/wait 0.1")
-            end
-            while GetCharacterCondition(39) do
-                yield("/wait 0.5")
-            end
-        end 
-        yield("/wait 1")
-        yield("/pcall Materialize true -1")
-        yield("/echo [FATE] Extracted all materia")
-        yield("/wait 1")
+    if GetCharacterCondition(CharacterCondition.occupiedMateriaExtraction) then
+        return
+    end
+
+    if CanExtractMateria(100) and GetInventoryFreeSlotCount() > 1 then
+        if not IsAddonVisible("Materialize") then
+            yield("/generalaction \"Materia Extraction\"")
+            return
+        end
+
+        LogInfo("[FATE] Extracting materia...")
+            
+        if IsAddonVisible("MaterializeDialog") then
+            yield("/pcall MaterializeDialog true 0")
+        else
+            yield("/pcall Materialize true 2")
+        end
+    else
+        if IsAddonVisible("Materialize") then
+            yield("/pcall Materialize true -1")
+        else
+            State = CharacterState.ready
+            LogInfo("State Change: Ready")
+        end
     end
 end
 
@@ -1800,7 +1753,8 @@ CharacterState = {
     interactWithNpc = InteractWithFateNpc,
     mounting = Mount,
     changingInstances = ChangeInstance,
-    inCombat = HandleCombat
+    inCombat = HandleCombat,
+    extractMateria = ExtractMateria
 }
 
 ---------------------------Beginning of the Code------------------------------------

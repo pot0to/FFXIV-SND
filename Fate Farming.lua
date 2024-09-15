@@ -1693,7 +1693,7 @@ while true do
                 yield("/callback SelectYesno true 0")
                 yield("/wait 0.1")
             end
-            while GetCharacterCondition(CharacterCondition.occupied39) do
+            while GetCharacterCondition(CharacterCondition.occupiedMateriaExtraction) do
                 LogInfo("[FATE] Repairing...")
                 yield("/wait 1") 
             end
