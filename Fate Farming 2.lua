@@ -8,9 +8,9 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.6  *
+*  2.0.7  *
 ***********
-    -> 2.0.6    Added check for zones with only one instance
+    -> 2.0.7    Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers
                 Added checks for CurrentFate == nil while moving and interacting with npc,
                 Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
     -> 2.0.0    State system
@@ -1456,12 +1456,12 @@ function Ready()
         LogInfo("State Change: ExtractMateria")
     elseif CurrentFate == nil and WaitIfBonusBuff and (HasStatusId(1288) or HasStatusId(1289)) then
         yield("/wait 10")
-    elseif ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
-        State = CharacterState.processRetainers
-        LogInfo("State Change: ProcessingRetainers")
     elseif ShouldExchange and (BicolorGemCount >= 1400) then
         State = CharacterState.exchangingVouchers
         LogInfo("State Change: ExchangingVouchers")
+    elseif ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
+        State = CharacterState.processRetainers
+        LogInfo("State Change: ProcessingRetainers")
     elseif CurrentFate == nil and EnableChangeInstance and GetZoneInstance() > 0 then
         State = CharacterState.changingInstances
         LogInfo("State Change: ChangingInstances")
