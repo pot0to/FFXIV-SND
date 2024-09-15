@@ -8,8 +8,9 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.0  *
+*  2.0.1  *
 ***********
+    -> 2.0.1    Added materia extraction back
     -> 2.0.0    State system
 
 *********************
