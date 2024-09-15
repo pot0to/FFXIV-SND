@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.7  *
+*  2.0.8  *
 ***********
-    -> 2.0.7    Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers
+    -> 2.0.8    Closes mini aetheryte window after moving to Nexus Exchange
+                Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers,
                 Added checks for CurrentFate == nil while moving and interacting with npc,
                 Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
     -> 2.0.0    State system
@@ -1554,7 +1555,11 @@ function ExchangeVouchers()
                 yield("/li nexus arcade")
                 return
             elseif GetDistanceToPoint(beryl.x, beryl.y, beryl.z) > 5 then
-                PathfindAndMoveTo(beryl.x, beryl.y, beryl.z)
+                if IsAddonVisible("TelepotTown") then
+                    yield("/callback TelepotTown false -1")
+                else
+                    PathfindAndMoveTo(beryl.x, beryl.y, beryl.z)
+                end
                 return
             else
                 if not HasTarget() or GetTargetName() ~= "Beryl" then
