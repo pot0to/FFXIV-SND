@@ -8,7 +8,7 @@
 
   ***********
   * Version *
-  *  1.1.17  *
+  *  2.0.0  *
   ***********
     -> 1.1.17   Added echo config back, adjusted antistuck timings
     -> 1.1.10   Merged random point in fate by scoobwrx
@@ -1181,7 +1181,7 @@ function MoveToFate()
         yield("/echo [FATE] Moving to fate #"..CurrentFate.fateId.." "..CurrentFate.fateName)
     end
 
-    local nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(CurrentFate.x, CurrentFate.y, CurrentFate.z, 30)
+    local nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(CurrentFate.x, CurrentFate.y, CurrentFate.z, 29)
     LogInfo("[FATE] Generated random coordinates in fate: "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
