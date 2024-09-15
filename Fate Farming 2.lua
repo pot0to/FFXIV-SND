@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.9  *
+*  2.1.0  *
 ***********
-    -> 2.0.9    Add check for if Retainers is false
+    -> 2.1.0    Add back manual /lsync for npc fates
+                Add check for if Retainers is false
                 Closes mini aetheryte window after moving to Nexus Exchange
                 Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers,
                 Added checks for CurrentFate == nil while moving and interacting with npc,
@@ -96,6 +97,8 @@ Echo = 2
 --2 echo how many bicolor gems you have after every fate and the next fate you're moving to
   
 --#endregion Settings
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --#region Plugin Checks and Setting Init
 
@@ -1230,19 +1233,19 @@ end
 function InteractWithFateNpc()
 
     if IsInFate() or GetCharacterCondition(CharacterCondition.inCombat) then
+        yield("/wait 1")
+        yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
+        PandoraSetFeatureState("Auto-Sync FATEs", true)
         State = CharacterState.inCombat
         LogInfo("State Change: InCombat")
     elseif CurrentFate == nil then
+        PandoraSetFeatureState("Auto-Sync FATEs", true)
         State = CharacterState.ready
         LogInfo("State Change: Ready")
     elseif PathfindInProgress() or PathIsRunning() then
         if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 10 then
             yield("/vnav stop")
         end
-        return
-    elseif not IsFateActive(CurrentFate.fateId) then
-        State = CharacterState.ready
-        LogInfo("State Change: Ready")
         return
     else
         -- if target is already selected earlier during pathing, avoids having to target and move again
@@ -1252,6 +1255,7 @@ function InteractWithFateNpc()
         end
 
         if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) > 5 then
+            PandoraSetFeatureState("Auto-Sync FATEs", false)
             MoveToNPC()
             return
         end
@@ -1318,6 +1322,7 @@ function SetMaxDistance()
 end
 
 function TurnOnCombatMods()
+    CombatModsOn = true
     -- turn on RSR in case you have the RSR 30 second out of combat timer set
     yield("/rotation manual")
     Class = GetClassJobId()
@@ -1354,6 +1359,7 @@ end
 
 function TurnOffCombatMods()
     LogInfo("Turning off combat mods")
+    CombatModsOn = false
     -- no need to turn RSR off
 
     -- turn of BMR so you don't start engaging other mobs
@@ -1375,13 +1381,11 @@ end
 
 function HandleCombat()
     if GetCharacterCondition(CharacterCondition.dead) then
-        CombatModsOn = false
         TurnOffCombatMods()
         State = CharacterState.dead
         LogInfo("State Change: Dead")
         return
     elseif not IsInFate() and not GetCharacterCondition(CharacterCondition.inCombat) then
-        CombatModsOn = false
         TurnOffCombatMods()
         State = CharacterState.ready
         LogInfo("State Change: Ready")
@@ -1389,7 +1393,6 @@ function HandleCombat()
     end
 
     if not CombatModsOn then
-        CombatModsOn = true
         TurnOnCombatMods()
     end
 
