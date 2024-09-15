@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.0.8  *
+*  2.0.9  *
 ***********
-    -> 2.0.8    Closes mini aetheryte window after moving to Nexus Exchange
+    -> 2.0.9    Add check for if Retainers is false
+                Closes mini aetheryte window after moving to Nexus Exchange
                 Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers,
                 Added checks for CurrentFate == nil while moving and interacting with npc,
                 Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
@@ -1460,7 +1461,7 @@ function Ready()
     elseif ShouldExchange and (BicolorGemCount >= 1400) then
         State = CharacterState.exchangingVouchers
         LogInfo("State Change: ExchangingVouchers")
-    elseif ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
+    elseif Retainers and ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
         State = CharacterState.processRetainers
         LogInfo("State Change: ProcessingRetainers")
     elseif CurrentFate == nil and EnableChangeInstance and GetZoneInstance() > 0 then
@@ -1588,67 +1589,65 @@ end
 
 function ProcessRetainers()
     LogInfo("[FATE] Handling retainers...")
-    if Retainers then
-        if ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
-        
-            if PathfindInProgress() or PathIsRunning() then
-                return
-            end
+    if ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
+    
+        if PathfindInProgress() or PathIsRunning() then
+            return
+        end
 
-            if not IsInZone(129) then
-                TeleportTo("Limsa Lominsa Lower Decks")
-                return
-            end
+        if not IsInZone(129) then
+            TeleportTo("Limsa Lominsa Lower Decks")
+            return
+        end
 
-            local summoningBell = {
-                x = -122.72,
-                y = 18.00,
-                z = 20.39
-            }
-            if GetDistanceToPoint(summoningBell.x, summoningBell.y, summoningBell.z) > 4.5 then
-                PathfindAndMoveTo(summoningBell.x, summoningBell.y, summoningBell.z)
-                return
-            end
+        local summoningBell = {
+            x = -122.72,
+            y = 18.00,
+            z = 20.39
+        }
+        if GetDistanceToPoint(summoningBell.x, summoningBell.y, summoningBell.z) > 4.5 then
+            PathfindAndMoveTo(summoningBell.x, summoningBell.y, summoningBell.z)
+            return
+        end
 
-            if not HasTarget() or GetTargetName() ~= "Summoning Bell" then
-                yield("/target Summoning Bell")
-                return
-            end
+        if not HasTarget() or GetTargetName() ~= "Summoning Bell" then
+            yield("/target Summoning Bell")
+            return
+        end
 
-            if not GetCharacterCondition(CharacterCondition.occupiedSummoningBell) then
-                yield("/interact")
-                if IsAddonVisible("RetainerList") then
-                    yield("/ays e")
-                    yield("/echo [FATE] Processing retainers")
-                    yield("/wait 1")
-                end
-            end
-
-            -- --Deliveroo
-            -- if TurnIn and HasPlugin("Deliveroo") then
-            --     if GetInventoryFreeSlotCount() < slots and TurnIn == true then
-            --         yield("/li gc")
-            --     end
-            --     while DeliverooIsTurnInRunning() == false do
-            --         yield("/wait 1")
-            --         yield("/deliveroo enable")
-            --     end
-            --     if DeliverooIsTurnInRunning() then
-            --         yield("/vnavmesh stop")
-            --     end
-            --     while DeliverooIsTurnInRunning() do
-            --         yield("/wait 1")
-            --     end
-            -- end
-        else
+        if not GetCharacterCondition(CharacterCondition.occupiedSummoningBell) then
+            yield("/interact")
             if IsAddonVisible("RetainerList") then
-                yield("/callback RetainerList true -1")
-            elseif IsInZone(SelectedZone.zoneId) then
-                State = CharacterState.ready
-                LogInfo("State Change: Ready")
-            elseif not GetCharacterCondition(CharacterCondition.occupiedSummoningBell) then
-                TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
+                yield("/ays e")
+                yield("/echo [FATE] Processing retainers")
+                yield("/wait 1")
             end
+        end
+
+        -- --Deliveroo
+        -- if TurnIn and HasPlugin("Deliveroo") then
+        --     if GetInventoryFreeSlotCount() < slots and TurnIn == true then
+        --         yield("/li gc")
+        --     end
+        --     while DeliverooIsTurnInRunning() == false do
+        --         yield("/wait 1")
+        --         yield("/deliveroo enable")
+        --     end
+        --     if DeliverooIsTurnInRunning() then
+        --         yield("/vnavmesh stop")
+        --     end
+        --     while DeliverooIsTurnInRunning() do
+        --         yield("/wait 1")
+        --     end
+        -- end
+    else
+        if IsAddonVisible("RetainerList") then
+            yield("/callback RetainerList true -1")
+        elseif IsInZone(SelectedZone.zoneId) then
+            State = CharacterState.ready
+            LogInfo("State Change: Ready")
+        elseif not GetCharacterCondition(CharacterCondition.occupiedSummoningBell) then
+            TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
         end
     end
 end
