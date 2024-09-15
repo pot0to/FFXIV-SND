@@ -41,13 +41,10 @@ This Plugins are Optional and not needed unless you have it enabled in the setti
                                                 https://raw.githubusercontent.com/FFXIV-CombatReborn/CombatRebornRepo/main/pluginmaster.json
     -> ChatCoordinates : (for setting a flag on the next Fate) available via base /xlplugins
 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
 ]]
---[[
 
-**************
-*  Settings  *
-**************
-]]
+--#region Settings
 
 --true = yes
 --false = no
@@ -95,16 +92,106 @@ Echo = 2
 --1 echo how many bicolor gems you have after every fate
 --2 echo how many bicolor gems you have after every fate and the next fate you're moving to
   
---[[
+--#endregion Settings
+
+--#region Plugin Checks and Setting Init
+
+--Required Plugin Warning
+if not HasPlugin("vnavmesh") then
+    yield("/echo [FATE] Please Install vnavmesh")
+end
+if not HasPlugin("RotationSolverReborn") and not HasPlugin("RotationSolver") then
+    yield("/echo [FATE] Please Install Rotation Solver Reborn")
+end
+if not HasPlugin("PandorasBox") then
+    yield("/echo [FATE] Please Install Pandora's Box")
+end
+if not HasPlugin("TextAdvance") then
+    yield("/echo [FATE] Please Install TextAdvance")
+end
+
+--Optional Plugin Warning
+if EnableChangeInstance == true  then
+    if HasPlugin("Lifestream") == false then
+        yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
+    end
+end
+if Retainers then
+    if not HasPlugin("AutoRetainer") then
+        yield("/echo [FATE] Please Install AutoRetainer")
+    end
+    if TurnIn then
+        if not HasPlugin("Deliveroo") then
+            yield("/echo [FATE] Please Install Deliveroo")
+        end
+    end
+end
+if ExtractMateria == true then
+    if HasPlugin("YesAlready") == false then
+        yield("/echo [FATE] Please Install YesAlready")
+    end 
+end   
+if useBM == true then
+    if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
+        yield("/echo [FATE] Please Install BossMod")
+    else
+        if HasPlugin("BossModReborn") then
+            BMorBMR = "BMR"
+        else
+            BMorBMR = "BM"
+        end
+    end
+end
+if not HasPlugin("ChatCoordinates") then
+    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
+end
+
+--Chocobo settings
+if ChocoboS == true then
+    PandoraSetFeatureState("Auto-Summon Chocobo", true) 
+    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "Use whilst in combat", true)
+elseif ChocoboS == false then
+    PandoraSetFeatureState("Auto-Summon Chocobo", false) 
+    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "Use whilst in combat", false)
+end
+
+--Fate settings
+PandoraSetFeatureState("Auto-Sync FATEs", true)
+PandoraSetFeatureState("FATE Targeting Mode", true)
+PandoraSetFeatureState("Action Combat Targeting", false)
+yield("/at y")
+
+--snd property
+function setSNDProperty(propertyName, value)
+    local currentValue = GetSNDProperty(propertyName)
+    if currentValue ~= value then
+        SetSNDProperty(propertyName, tostring(value))
+        LogInfo("[SetSNDProperty] " .. propertyName .. " set to " .. tostring(value))
+    end
+end
+
+setSNDProperty("UseItemStructsVersion", true)
+setSNDProperty("UseSNDTargeting", true)
+setSNDProperty("StopMacroIfTargetNotFound", false)
+setSNDProperty("StopMacroIfCantUseItem", false)
+setSNDProperty("StopMacroIfItemNotFound", false)
+setSNDProperty("StopMacroIfAddonNotFound", false)
+setSNDProperty("StopMacroIfAddonNotVisible", false)
+
+--vnavmesh building
+if not NavIsReady() then
+    yield("/echo [FATE] Building Mesh Please wait...")
+end
+while not NavIsReady() do
+    yield("/wait 1")
+end
+if NavIsReady() then
+    yield("/echo [FATE] Mesh is Ready!")
+end
+
+--#endregion Plugin Checks and Setting Init
   
-************
-*  Script  *
-*   Start  *
-************
-  
-]]
-  
-  ----------------------------------Settings----------------------------------------------
+--#region Data
 
 CharacterCondition = {
     dead=2,
@@ -684,181 +771,9 @@ FatesData = {
     }
 }
 
---Required Plugin Warning
-if not HasPlugin("vnavmesh") then
-    yield("/echo [FATE] Please Install vnavmesh")
-end
-if not HasPlugin("RotationSolverReborn") and not HasPlugin("RotationSolver") then
-    yield("/echo [FATE] Please Install Rotation Solver Reborn")
-end
-if not HasPlugin("PandorasBox") then
-    yield("/echo [FATE] Please Install Pandora's Box")
-end
-if not HasPlugin("TextAdvance") then
-    yield("/echo [FATE] Please Install TextAdvance")
-end
+--#endregion Data
 
---Optional Plugin Warning
-if EnableChangeInstance == true  then
-    if HasPlugin("Lifestream") == false then
-        yield("/echo [FATE] Please Install Lifestream or Disable ChangeInstance in the settings")
-    end
-end
-if Retainers then
-    if not HasPlugin("AutoRetainer") then
-        yield("/echo [FATE] Please Install AutoRetainer")
-    end
-    if TurnIn then
-        if not HasPlugin("Deliveroo") then
-            yield("/echo [FATE] Please Install Deliveroo")
-        end
-    end
-end
-if ExtractMateria == true then
-    if HasPlugin("YesAlready") == false then
-        yield("/echo [FATE] Please Install YesAlready")
-    end 
-end   
-if useBM == true then
-    if HasPlugin("BossModReborn") == false and HasPlugin("BossMod") == false then
-        yield("/echo [FATE] Please Install BossMod")
-    else
-        if HasPlugin("BossModReborn") then
-            BMorBMR = "BMR"
-        else
-            BMorBMR = "BM"
-        end
-    end
-end
-if not HasPlugin("ChatCoordinates") then
-    yield("/echo [FATE] ChatCoordinates is not installed. Map will not show flag when moving to next Fate.")
-end
-
---Chocobo settings
-if ChocoboS == true then
-    PandoraSetFeatureState("Auto-Summon Chocobo", true) 
-    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "Use whilst in combat", true)
-elseif ChocoboS == false then
-    PandoraSetFeatureState("Auto-Summon Chocobo", false) 
-    PandoraSetFeatureConfigState("Auto-Summon Chocobo", "Use whilst in combat", false)
-end
-
---Fate settings
-PandoraSetFeatureState("Auto-Sync FATEs", true)
-PandoraSetFeatureState("FATE Targeting Mode", true)
-PandoraSetFeatureState("Action Combat Targeting", false)
-yield("/at y")
-
---snd property
-function setSNDProperty(propertyName, value)
-    local currentValue = GetSNDProperty(propertyName)
-    if currentValue ~= value then
-        SetSNDProperty(propertyName, tostring(value))
-        LogInfo("[SetSNDProperty] " .. propertyName .. " set to " .. tostring(value))
-    end
-end
-
-setSNDProperty("UseItemStructsVersion", true)
-setSNDProperty("UseSNDTargeting", true)
-setSNDProperty("StopMacroIfTargetNotFound", false)
-setSNDProperty("StopMacroIfCantUseItem", false)
-setSNDProperty("StopMacroIfItemNotFound", false)
-setSNDProperty("StopMacroIfAddonNotFound", false)
-setSNDProperty("StopMacroIfAddonNotVisible", false)
-
-------------------------------Functions----------------------------------------------
-
-function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
-    teleportTimePenalty = 200 -- to account for how long teleport takes you
-
-    local aetheryteForClosestFate = nil
-    local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)
-    LogInfo("[FATE] Direct flight distance is: "..closestTravelDistance)
-    for j, aetheryte in ipairs(SelectedZone.aetheryteList) do
-        local distanceAetheryteToFate = DistanceBetween(aetheryte.x, aetheryte.y, aetheryte.z, nextFate.x, nextFate.y, nextFate.z)
-        local comparisonDistance = distanceAetheryteToFate + teleportTimePenalty
-        LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance))
-
-        if comparisonDistance < closestTravelDistance then
-            LogInfo("[FATE] Updating closest aetheryte to "..aetheryte.aetheryteName)
-            closestTravelDistance = comparisonDistance
-            aetheryteForClosestFate = aetheryte
-        end
-    end
-
-    if aetheryteForClosestFate ~=nil then
-        TeleportTo(aetheryteForClosestFate.aetheryteName)
-    end
-end
-
-function TeleportTo(aetheryteName)
-    while EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp()) - LastTeleportTimeStamp < 5 do
-        LogInfo("[FATE] Too soon since last teleport. Waiting...")
-        yield("/wait 5")
-    end
-
-    yield("/tp "..aetheryteName)
-    yield("/wait 1") -- wait for casting to begin
-    while GetCharacterCondition(CharacterCondition.casting) do
-        LogInfo("[FATE] Casting teleport...")
-        yield("/wait 1")
-    end
-    yield("/wait 1") -- wait for that microsecond in between the cast finishing and the transition beginning
-    while GetCharacterCondition(CharacterCondition.transition) do
-        LogInfo("[FATE] Teleporting...")
-        yield("/wait 1")
-    end
-    yield("/wait 1")
-    LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
-end
-
-function Mount()
-    if GetCharacterCondition(CharacterCondition.mounted) then
-        State = CharacterState.movingToFate
-        LogInfo("State Change: MovingToFate "..CurrentFate.fateName)
-    else
-        if not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.mounting) then
-            if MountToUse == "mount roulette" then
-                yield('/gaction "mount roulette"')
-            else
-                yield('/mount "' .. MountToUse)
-            end
-        end
-        yield("/wait 1")
-    end
-end
-
-function Dismount()
-    if PathIsRunning() or PathfindInProgress() then
-        yield("/vnav stop")
-    end
-
-    -- characters that are flying are also mounted
-    local retries = 0
-    while GetCharacterCondition(CharacterCondition.mounted) do
-        yield('/ac dismount')
-        yield("/wait 2")
-
-        if retries >= 3 then
-            antistuck()
-        end
-
-        retries = retries + 1
-    end
-end
-
-function EorzeaTimeToUnixTime(eorzeaTime)
-    return eorzeaTime/(144/7) -- 24h Eorzea Time equals 70min IRL
-end
-
-function GetFateNpcName(fateName)
-    for i, fate in ipairs(SelectedZone.fatesList.otherNpcFates) do
-        if fate.fateName == fateName then
-            return fate.npcName
-        end
-    end
-end
-
+--#region Fate Functions
 function IsCollectionsFate(fateName)
     for i, collectionsFate in ipairs(SelectedZone.fatesList.collectionsFates) do
         if collectionsFate == fateName then
@@ -893,6 +808,28 @@ function IsBlacklistedFate(fateName)
         end
     end
     return false
+end
+
+function GetFateNpcName(fateName)
+    for i, fate in ipairs(SelectedZone.fatesList.otherNpcFates) do
+        if fate.fateName == fateName then
+            return fate.npcName
+        end
+    end
+end
+
+function IsFateActive(fateId)
+    local activeFates = GetActiveFates()
+    for i = 0, activeFates.Count-1 do
+        if fateId == activeFates[i] then
+            return true
+        end
+    end
+    return false
+end
+
+function EorzeaTimeToUnixTime(eorzeaTime)
+    return eorzeaTime/(144/7) -- 24h Eorzea Time equals 70min IRL
 end
 
 --[[
@@ -1039,24 +976,155 @@ function RandomAdjustCoordinates(x, y, z, maxDistance)
     return randomX, randomY, randomZ
 end
 
+--#endregion Fate Functions
+
+--#region Movement Functions
+
+function TeleportToClosestAetheryteToFate(playerPosition, nextFate)
+    teleportTimePenalty = 200 -- to account for how long teleport takes you
+
+    local aetheryteForClosestFate = nil
+    local closestTravelDistance = GetDistanceToPoint(nextFate.x, nextFate.y, nextFate.z)
+    LogInfo("[FATE] Direct flight distance is: "..closestTravelDistance)
+    for j, aetheryte in ipairs(SelectedZone.aetheryteList) do
+        local distanceAetheryteToFate = DistanceBetween(aetheryte.x, aetheryte.y, aetheryte.z, nextFate.x, nextFate.y, nextFate.z)
+        local comparisonDistance = distanceAetheryteToFate + teleportTimePenalty
+        LogInfo("[FATE] Distance via "..aetheryte.aetheryteName.." adjusted for tp penalty is "..tostring(comparisonDistance))
+
+        if comparisonDistance < closestTravelDistance then
+            LogInfo("[FATE] Updating closest aetheryte to "..aetheryte.aetheryteName)
+            closestTravelDistance = comparisonDistance
+            aetheryteForClosestFate = aetheryte
+        end
+    end
+
+    if aetheryteForClosestFate ~=nil then
+        TeleportTo(aetheryteForClosestFate.aetheryteName)
+    end
+end
+
+function TeleportTo(aetheryteName)
+    while EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp()) - LastTeleportTimeStamp < 5 do
+        LogInfo("[FATE] Too soon since last teleport. Waiting...")
+        yield("/wait 5")
+    end
+
+    yield("/tp "..aetheryteName)
+    yield("/wait 1") -- wait for casting to begin
+    while GetCharacterCondition(CharacterCondition.casting) do
+        LogInfo("[FATE] Casting teleport...")
+        yield("/wait 1")
+    end
+    yield("/wait 1") -- wait for that microsecond in between the cast finishing and the transition beginning
+    while GetCharacterCondition(CharacterCondition.transition) do
+        LogInfo("[FATE] Teleporting...")
+        yield("/wait 1")
+    end
+    yield("/wait 1")
+    LastTeleportTimeStamp = EorzeaTimeToUnixTime(GetCurrentEorzeaTimestamp())
+end
+
+function ChangeInstance()
+    --Change Instance
+    
+    if EnableChangeInstance then
+        yield("/wait 1")
+
+        yield("/target aetheryte")
+        yield("/wait 1")
+
+        while not HasTarget() or GetTargetName() ~= "aetheryte" do
+            LogInfo("[FATE] Attempting to target aetheryte.")
+            local closestAetheryte = nil
+            local closestAetheryteDistance = math.maxinteger
+            for i, aetheryte in ipairs(SelectedZone.aetheryteList) do
+                -- GetDistanceToPoint is implemented with raw distance instead of distance squared
+                local distanceToAetheryte = GetDistanceToPoint(aetheryte.x, aetheryte.y, aetheryte.z)
+                if distanceToAetheryte < closestAetheryteDistance then
+                    closestAetheryte = aetheryte
+                    closestAetheryteDistance = distanceToAetheryte
+                end
+            end
+            TeleportTo(closestAetheryte.aetheryteName)
+
+            yield("/target Aetheryte")
+            yield("/wait 1")
+        end
+
+        if GetCharacterCondition(CharacterCondition.mounted) then
+            LogInfo("[FATE] Dismounting...")
+            Dismount()
+        end
+
+        yield("/lockon")
+        yield("/automove")
+        while GetDistanceToTarget() > 10 do
+            LogInfo("[FATE] Approaching aetheryte...")
+            yield("/wait 0.5")
+        end
+        yield("/automove off")
+
+        local nextInstance = (GetZoneInstance() % 3) + 1
+
+        yield("/li "..nextInstance) -- start instance transfer
+        yield("/wait 1") -- wait for instance transfer to register
+        while GetCharacterCondition(CharacterCondition.transition) do -- wait for instance transfer to complete
+            LogInfo("[FATE] Waiting for instance transfer to complete...")
+            yield("/wait 1")
+        end
+        yield("/lockon off")
+        State = CharacterState.ready
+        LogInfo("State Change: Ready")
+    end
+    yield("/wait 3")
+end
+
+function Mount()
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        State = CharacterState.movingToFate
+        LogInfo("State Change: MovingToFate "..CurrentFate.fateName)
+    else
+        if not IsPlayerCasting() and not GetCharacterCondition(CharacterCondition.mounting) then
+            if MountToUse == "mount roulette" then
+                yield('/gaction "mount roulette"')
+            else
+                yield('/mount "' .. MountToUse)
+            end
+        end
+        yield("/wait 1")
+    end
+end
+
+function Dismount()
+    if PathIsRunning() or PathfindInProgress() then
+        yield("/vnav stop")
+    end
+
+    -- characters that are flying are also mounted
+    local retries = 0
+    while GetCharacterCondition(CharacterCondition.mounted) do
+        yield('/ac dismount')
+        yield("/wait 2")
+
+        if retries >= 3 then
+            antistuck()
+        end
+
+        retries = retries + 1
+    end
+end
+
 --Paths to the Fate NPC Starter
 function MoveToNPC()
     LogInfo("MoveToNPC function")
     yield("/target "..CurrentFate.npcName)
     if HasTarget() and GetTargetName()==CurrentFate.npcName then
-        if GetDistanceToTarget() > 10 then
+        if GetDistanceToTarget() > 5 then
             PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying))
         else
             yield("/vnav stop")
         end
         return
-    end
-end
-
-function FoodCheck()
-    --food usage
-    if not HasStatusId(48) and Food ~= "" then
-        yield("/item " .. Food)
     end
 end
 
@@ -1133,16 +1201,6 @@ function MoveToFate()
     PathfindAndMoveTo(nearestLandX, nearestLandY, nearestLandZ, HasFlightUnlocked(SelectedZone.zoneId))
 end
 
-function IsFateActive(fateId)
-    local activeFates = GetActiveFates()
-    for i = 0, activeFates.Count-1 do
-        if fateId == activeFates[i] then
-            return true
-        end
-    end
-    return false
-end
-
 function InteractWithFateNpc()
     if IsInFate() or GetCharacterCondition(CharacterCondition.inCombat) then
         State = CharacterState.inCombat
@@ -1162,8 +1220,6 @@ function InteractWithFateNpc()
             return
         end
 
-        LogInfo("test 4")
-
         if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) > 5 then
             MoveToNPC()
             return
@@ -1177,6 +1233,10 @@ function InteractWithFateNpc()
     end
 end
 
+--#endregion
+
+--#region Combat Functions
+
 --Paths to the enemy (for Meele)
 function EnemyPathing()
     while HasTarget() and GetDistanceToTarget() > 3.5 do
@@ -1188,62 +1248,6 @@ function EnemyPathing()
         end
         yield("/wait 0.1")
     end
-end
-
---When there is no Fate 
-function ChangeInstance()
-    --Change Instance
-    
-    if EnableChangeInstance then
-        yield("/wait 1")
-
-        yield("/target aetheryte")
-        yield("/wait 1")
-
-        while not HasTarget() or GetTargetName() ~= "aetheryte" do
-            LogInfo("[FATE] Attempting to target aetheryte.")
-            local closestAetheryte = nil
-            local closestAetheryteDistance = math.maxinteger
-            for i, aetheryte in ipairs(SelectedZone.aetheryteList) do
-                -- GetDistanceToPoint is implemented with raw distance instead of distance squared
-                local distanceToAetheryte = GetDistanceToPoint(aetheryte.x, aetheryte.y, aetheryte.z)
-                if distanceToAetheryte < closestAetheryteDistance then
-                    closestAetheryte = aetheryte
-                    closestAetheryteDistance = distanceToAetheryte
-                end
-            end
-            TeleportTo(closestAetheryte.aetheryteName)
-
-            yield("/target Aetheryte")
-            yield("/wait 1")
-        end
-
-        if GetCharacterCondition(CharacterCondition.mounted) then
-            LogInfo("[FATE] Dismounting...")
-            Dismount()
-        end
-
-        yield("/lockon")
-        yield("/automove")
-        while GetDistanceToTarget() > 10 do
-            LogInfo("[FATE] Approaching aetheryte...")
-            yield("/wait 0.5")
-        end
-        yield("/automove off")
-
-        local nextInstance = (GetZoneInstance() % 3) + 1
-
-        yield("/li "..nextInstance) -- start instance transfer
-        yield("/wait 1") -- wait for instance transfer to register
-        while GetCharacterCondition(CharacterCondition.transition) do -- wait for instance transfer to complete
-            LogInfo("[FATE] Waiting for instance transfer to complete...")
-            yield("/wait 1")
-        end
-        yield("/lockon off")
-        State = CharacterState.ready
-        LogInfo("State Change: Ready")
-    end
-    yield("/wait 3")
 end
 
 function AvoidEnemiesWhileFlying()
@@ -1334,6 +1338,112 @@ function TurnOffCombatMods()
             --yield("/vbmai followoutofcombat off")
         end
         bossModAIActive = false
+    end
+end
+
+function HandleCombat()
+    if GetCharacterCondition(CharacterCondition.dead) then
+        CombatModsOn = false
+        TurnOffCombatMods()
+        State = CharacterState.dead
+        LogInfo("State Change: Dead")
+        return
+    elseif not IsInFate() and not GetCharacterCondition(CharacterCondition.inCombat) then
+        CombatModsOn = false
+        TurnOffCombatMods()
+        State = CharacterState.ready
+        LogInfo("State Change: Ready")
+        return
+    end
+
+    if not CombatModsOn then
+        CombatModsOn = true
+        TurnOnCombatMods()
+    end
+
+    GemAnnouncementLock = false
+    
+    if GetCharacterCondition(CharacterCondition.mounted) then
+        Dismount()
+        return
+    end
+
+    --Paths to enemys when Bossmod is disabled
+    if not useBM then
+        EnemyPathing()
+    end
+
+    -- switches to targeting forlorns for bonus (if present)
+    yield("/target Forlorn Maiden")
+    yield("/target The Forlorn")
+
+    -- targets whatever is trying to kill you
+    if not HasTarget() then
+        yield("/battletarget")
+    end
+
+    -- pathfind closer if enemies are too far
+    if IsInFate() and not GetCharacterCondition(CharacterCondition.inCombat) and HasTarget() then
+        if GetDistanceToTarget() > MaxDistance then
+            if not PathfindInProgress() or PathIsRunning() then
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos())
+            end
+        else
+            yield("/vnav stop")
+        end
+    end
+    yield("/wait 1")
+end
+
+--#endregion
+
+--#region Other State Functions
+
+function FoodCheck()
+    --food usage
+    if not HasStatusId(48) and Food ~= "" then
+        yield("/item " .. Food)
+    end
+end
+
+function Ready()
+    LogInfo("Ready")
+
+    FoodCheck()
+
+    if GetCharacterCondition(CharacterCondition.inCombat) or (not PathIsRunning() and IsInFate()) then
+        State = CharacterState.inCombat
+        LogInfo("State Change: InCombat")
+    elseif GetCharacterCondition(CharacterCondition.dead) then
+        State = CharacterState.dead
+        LogInfo("State Change: Dead")
+    elseif ExtractMateria and CanExtractMateria(100) and GetInventoryFreeSlotCount() > 1 then
+        State = CharacterState.extractMateria
+        LogInfo("State Change: ExtractMateria")
+    elseif CurrentFate == nil and WaitIfBonusBuff and (HasStatusId(1288) or HasStatusId(1289)) then
+        yield("/wait 10")
+    elseif ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
+        State = CharacterState.processRetainers
+        LogInfo("State Change: ProcessingRetainers")
+    elseif ShouldExchange and (BicolorGemCount >= 1400) then
+        State = CharacterState.exchangingVouchers
+        LogInfo("State Change: ExchangingVouchers")
+    elseif CurrentFate == nil then
+        State = CharacterState.changingInstances
+        LogInfo("State Change: ChangingInstances")
+    else
+        State = CharacterState.movingToFate
+        LogInfo("State Change: MovingtoFate "..CurrentFate.fateName)
+    end
+
+    LogInfo("mid")
+    if not GemAnnouncementLock and Echo >= 1 then
+        GemAnnouncementLock = true
+        if BicolorGemCount >= 1400 then
+            yield("/echo [FATE] You're almost capped with "..tostring(BicolorGemCount).."/1500 gems! <se.3>")
+        else
+            yield("/echo [FATE] Gems: "..tostring(BicolorGemCount).."/1500")
+        end
     end
 end
 
@@ -1432,47 +1542,6 @@ function ExchangeVouchers()
             State = CharacterState.ready
             LogInfo("State Change: Ready")
             return
-        end
-    end
-end
-
-function Ready()
-    LogInfo("Ready")
-
-    FoodCheck()
-
-    if GetCharacterCondition(CharacterCondition.inCombat) or (not PathIsRunning() and IsInFate()) then
-        State = CharacterState.inCombat
-        LogInfo("State Change: InCombat")
-    elseif GetCharacterCondition(CharacterCondition.dead) then
-        State = CharacterState.dead
-        LogInfo("State Change: Dead")
-    elseif ExtractMateria and CanExtractMateria(100) and GetInventoryFreeSlotCount() > 1 then
-        State = CharacterState.extractMateria
-        LogInfo("State Change: ExtractMateria")
-    elseif CurrentFate == nil and WaitIfBonusBuff and (HasStatusId(1288) or HasStatusId(1289)) then
-        yield("/wait 10")
-    elseif ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
-        State = CharacterState.processRetainers
-        LogInfo("State Change: ProcessingRetainers")
-    elseif ShouldExchange and (BicolorGemCount >= 1400) then
-        State = CharacterState.exchangingVouchers
-        LogInfo("State Change: ExchangingVouchers")
-    elseif CurrentFate == nil then
-        State = CharacterState.changingInstances
-        LogInfo("State Change: ChangingInstances")
-    else
-        State = CharacterState.movingToFate
-        LogInfo("State Change: MovingtoFate "..CurrentFate.fateName)
-    end
-
-    LogInfo("mid")
-    if not GemAnnouncementLock and Echo >= 1 then
-        GemAnnouncementLock = true
-        if BicolorGemCount >= 1400 then
-            yield("/echo [FATE] You're almost capped with "..tostring(BicolorGemCount).."/1500 gems! <se.3>")
-        else
-            yield("/echo [FATE] Gems: "..tostring(BicolorGemCount).."/1500")
         end
     end
 end
@@ -1602,60 +1671,6 @@ function ExtractMateria()
     end
 end
 
-function HandleCombat()
-    if GetCharacterCondition(CharacterCondition.dead) then
-        CombatModsOn = false
-        TurnOffCombatMods()
-        State = CharacterState.dead
-        LogInfo("State Change: Dead")
-        return
-    elseif not IsInFate() and not GetCharacterCondition(CharacterCondition.inCombat) then
-        CombatModsOn = false
-        TurnOffCombatMods()
-        State = CharacterState.ready
-        LogInfo("State Change: Ready")
-        return
-    end
-
-    if not CombatModsOn then
-        CombatModsOn = true
-        TurnOnCombatMods()
-    end
-
-    GemAnnouncementLock = false
-    
-    if GetCharacterCondition(CharacterCondition.mounted) then
-        Dismount()
-        return
-    end
-
-    --Paths to enemys when Bossmod is disabled
-    if not useBM then
-        EnemyPathing()
-    end
-
-    -- switches to targeting forlorns for bonus (if present)
-    yield("/target Forlorn Maiden")
-    yield("/target The Forlorn")
-
-    -- targets whatever is trying to kill you
-    if not HasTarget() then
-        yield("/battletarget")
-    end
-
-    -- pathfind closer if enemies are too far
-    if IsInFate() and not GetCharacterCondition(CharacterCondition.inCombat) and HasTarget() then
-        if GetDistanceToTarget() > MaxDistance then
-            if not PathfindInProgress() or PathIsRunning() then
-                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos())
-            end
-        else
-            yield("/vnav stop")
-        end
-    end
-    yield("/wait 1")
-end
-
 CharacterState = {
     ready = Ready,
     dead = HandleDeath,
@@ -1669,18 +1684,9 @@ CharacterState = {
     extractMateria = ExtractMateria
 }
 
----------------------------Beginning of the Code------------------------------------
+--#endregion Other State Functions
 
---vnavmesh building
-if not NavIsReady() then
-    yield("/echo [FATE] Building Mesh Please wait...")
-end
-while not NavIsReady() do
-    yield("/wait 1")
-end
-if NavIsReady() then
-    yield("/echo [FATE] Mesh is Ready!")
-end
+--#region Main
 
 GemAnnouncementLock = false
 AvailableFateCount = 0
@@ -1712,8 +1718,6 @@ LastTeleportTimeStamp = 0
 
 State = CharacterState.ready
 
---Start of the Loop
-
 LogInfo("[FATE] Starting fate farming script.")
 CurrentFate = nil
 while true do
@@ -1730,8 +1734,9 @@ while true do
         
         BicolorGemCount = GetItemCount(26807)
 
-        LogInfo("Processing state")
         State()
     end
     yield("/wait 0.1")
 end
+
+--#endregion Main
