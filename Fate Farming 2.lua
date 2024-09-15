@@ -1151,6 +1151,13 @@ function MoveToFate()
         return
     end
 
+    if CurrentFate == nil or not IsFateActive(CurrentFate.fateId) then
+        yield("/vnav stop")
+        State = CharacterState.ready
+        LogInfo("State Change: Ready")
+        return
+    end
+
     if PathIsRunning() or PathfindInProgress() then
         local x1 = GetPlayerRawXPos()
         local y1 = GetPlayerRawYPos()
@@ -1460,7 +1467,6 @@ function Ready()
         LogInfo("State Change: MovingtoFate "..CurrentFate.fateName)
     end
 
-    LogInfo("mid")
     if not GemAnnouncementLock and Echo >= 1 then
         GemAnnouncementLock = true
         if BicolorGemCount >= 1400 then
@@ -1769,7 +1775,9 @@ while true do
             LogInfo("State Change: InCombat")
         end
 
-        if State ~= CharacterState.processRetainers and State ~= CharacterState.inCombat and State ~= CharacterState.exchangingVouchers then
+        if State == CharacterState.ready or State == CharacterState.changingInstances or
+            State == CharacterState.interactWithNpc or State == CharacterState.movingToFate
+        then
             CurrentFate = SelectNextFate()
         end
         
