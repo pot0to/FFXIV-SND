@@ -556,7 +556,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {
                 { fateName= "Pasture Expiration Date", npcName= "Tsivli Stoutstrider" },
-                { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
+                -- { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
                 { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
                 { fateName= "Birds Up", npcName= "Coffee Farmer" },
                 { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" }
@@ -1432,7 +1432,7 @@ function HandleDeath()
     end
 end
 
-function PurchaseBicolorVouchers(bicolorGemCount)
+function ExchangeVouchers(bicolorGemCount)
     local npcName = ""
     if ShouldExchange and bicolorGemCount >= 1400 then
         if not PathIsRunning() and not PathfindInProgress() then
@@ -1602,14 +1602,14 @@ while true do
         end
 
         --Stops Moving to dead Fates or change paths to better fates
-        NextFate = SelectNextFate()
-        if NextFate~=nil and CurrentFate.fateId ~= NextFate.fateId then
+        CurrentFate = SelectNextFate()
+        if CurrentFate~=nil and CurrentFate.fateId ~= CurrentFate.fateId then
             if Echo == 2 then
-                yield("/echo [FATE] Stopped pathing to #"..CurrentFate.fateId.." "..CurrentFate.fateName..", higher priority fate found: #"..NextFate.fateId.." "..NextFate.fateName)
+                yield("/echo [FATE] Stopped pathing to #"..CurrentFate.fateId.." "..CurrentFate.fateName..", higher priority fate found: #"..CurrentFate.fateId.." "..CurrentFate.fateName)
             end
             yield("/vnavmesh stop")
             yield("/wait 1")
-            CurrentFate = NextFate
+            CurrentFate = CurrentFate
             if not PathIsRunning() then
                 MoveToFate(CurrentFate)
                 yield("/wait 1")
@@ -1758,8 +1758,8 @@ while true do
     end
 
     --Retainer Process
-    if Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and GetInventoryFreeSlotCount() > 1 and
-       (not WaitIfBonusBuff or not (HasStatusId(1288) or HasStatusId(1289))) then
+    while Retainers and not GetCharacterCondition(CharacterCondition.inCombat) and GetInventoryFreeSlotCount() > 1 and
+       (not WaitIfBonusBuff or not (HasStatusId(1288) or HasStatusId(1289))) and ARRetainersWaitingToBeProcessed() then
         LogInfo("[FATE] Handling retainers...")
         if ARRetainersWaitingToBeProcessed() == true then
             while not IsInZone(129) do
@@ -1780,8 +1780,9 @@ while true do
                 yield("/wait 1")
             end
             yield("/target Summoning Bell")
-            while GetTargetName() == "" do
+            while GetTargetName() ~= "Summoning Bell" do
                 yield("/target Summoning Bell")
+                yield("/wait 0.2")
             end
             while GetTargetName() == "Summoning Bell" and GetDistanceToTarget() > 4.5 do
                 PathfindAndMoveTo(-122.7251, 18.0000, 20.3941)
@@ -1845,5 +1846,5 @@ while true do
             yield("/echo [FATE] Gems: "..tostring(bicolorGemCount).."/1500")
         end
     end
-    PurchaseBicolorVouchers(bicolorGemCount)
+    ExchangeVouchers(bicolorGemCount)
 end
