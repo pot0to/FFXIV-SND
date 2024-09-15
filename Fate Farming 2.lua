@@ -8,11 +8,11 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.1.0  *
+*  2.1.1  *
 ***********
-    -> 2.1.0    Add back manual /lsync for npc fates
-                Add check for if Retainers is false
-                Closes mini aetheryte window after moving to Nexus Exchange
+    -> 2.1.1    Removed CurrentFate fate update while interacting with fate npc
+                Add back manual /lsync for npc fates, Add check for if Retainers is false,
+                Closes mini aetheryte window after moving to Nexus Exchange,
                 Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers,
                 Added checks for CurrentFate == nil while moving and interacting with npc,
                 Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
@@ -1238,7 +1238,7 @@ function InteractWithFateNpc()
         PandoraSetFeatureState("Auto-Sync FATEs", true)
         State = CharacterState.inCombat
         LogInfo("State Change: InCombat")
-    elseif CurrentFate == nil then
+    elseif CurrentFate == nil or not IsFateActive(CurrentFate.fateId) then
         PandoraSetFeatureState("Auto-Sync FATEs", true)
         State = CharacterState.ready
         LogInfo("State Change: Ready")
@@ -1787,8 +1787,7 @@ while true do
             LogInfo("State Change: InCombat")
         end
 
-        if State == CharacterState.ready or State == CharacterState.changingInstances or
-            State == CharacterState.interactWithNpc or State == CharacterState.movingToFate
+        if State == CharacterState.ready or State == CharacterState.changingInstances or State == CharacterState.movingToFate
         then
             CurrentFate = SelectNextFate()
         end
