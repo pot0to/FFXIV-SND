@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.1.2  *
+*  2.1.3  *
 ***********
-    -> 2.1.2    Added mounted check for MoveToFate unstuck
+    -> 2.1.3    Updated MoveToFate to require character be in flying state
+                Added mounted check for MoveToFate unstuck
                 Removed CurrentFate fate update while interacting with fate npc,
                 Add back manual /lsync for npc fates, Add check for if Retainers is false,
                 Closes mini aetheryte window after moving to Nexus Exchange,
@@ -1125,7 +1126,12 @@ function Dismount()
 
         if GetCharacterCondition(CharacterCondition.flying) and DistanceBetween(x1, y1, z1, x2, y2, z2) < 2 then
             local random_x, random_y, random_z = RandomAdjustCoordinates(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), 10)
-            PathfindAndMoveTo(random_x, random_y, random_z)
+            local nearestPointX = QueryMeshNearestPointX(random_x, random_y, random_z, 100, 100)
+            local nearestPointY = QueryMeshNearestPointY(random_x, random_y, random_z, 100, 100)
+            local nearestPointZ = QueryMeshNearestPointZ(random_x, random_y, random_z, 100, 100)
+            if nearestPointX ~= nil and nearestPointY ~= nil and nearestPointZ ~= nil then
+                PathfindAndMoveTo(nearestPointX, nearestPointY, nearestPointZ)
+            end
             yield("/wait 2")
         end
     elseif GetCharacterCondition(CharacterCondition.mounted) then
@@ -1206,7 +1212,7 @@ function MoveToFate()
         return
     end
 
-    if not GetCharacterCondition(CharacterCondition.mounted) then
+    if not GetCharacterCondition(CharacterCondition.flying) then
         State = CharacterState.mounting
         LogInfo("State Change: Mounting")
         return
@@ -1218,7 +1224,6 @@ function MoveToFate()
     end
 
     local nearestLandX, nearestLandY, nearestLandZ = RandomAdjustCoordinates(CurrentFate.x, CurrentFate.y, CurrentFate.z, 29)
-    LogInfo("[FATE] Generated random coordinates in fate: "..nearestLandX..", "..nearestLandY..", "..nearestLandZ)
 
     if HasPlugin("ChatCoordinates") then
         SetMapFlag(SelectedZone.zoneId, nearestLandX, nearestLandY, nearestLandZ)
@@ -1591,9 +1596,11 @@ function ExchangeVouchers()
     end
 end
 
+ProcessDeliveroo = true
 function ProcessRetainers()
     LogInfo("[FATE] Handling retainers...")
     if ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
+        ProcessDeliveroo = true
     
         if PathfindInProgress() or PathIsRunning() then
             return
@@ -1627,23 +1634,6 @@ function ProcessRetainers()
                 yield("/wait 1")
             end
         end
-
-        -- --Deliveroo
-        -- if TurnIn and HasPlugin("Deliveroo") then
-        --     if GetInventoryFreeSlotCount() < slots and TurnIn == true then
-        --         yield("/li gc")
-        --     end
-        --     while DeliverooIsTurnInRunning() == false do
-        --         yield("/wait 1")
-        --         yield("/deliveroo enable")
-        --     end
-        --     if DeliverooIsTurnInRunning() then
-        --         yield("/vnavmesh stop")
-        --     end
-        --     while DeliverooIsTurnInRunning() do
-        --         yield("/wait 1")
-        --     end
-        -- end
     else
         if IsAddonVisible("RetainerList") then
             yield("/callback RetainerList true -1")
@@ -1651,7 +1641,25 @@ function ProcessRetainers()
             State = CharacterState.ready
             LogInfo("State Change: Ready")
         elseif not GetCharacterCondition(CharacterCondition.occupiedSummoningBell) then
-            TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
+            if ProcessDeliveroo and TurnIn and HasPlugin("Deliveroo") then
+                ProcessDeliveroo = false
+                if GetInventoryFreeSlotCount() < slots and TurnIn then
+                    yield("/li gc")
+                    yield("/wait 1")
+                end
+                while DeliverooIsTurnInRunning() do
+                    yield("/wait 1")
+                    yield("/deliveroo enable")
+                end
+                if DeliverooIsTurnInRunning() then
+                    yield("/vnavmesh stop")
+                end
+                while DeliverooIsTurnInRunning() do
+                    yield("/wait 1")
+                end
+            else
+                TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
+            end
         end
     end
 end
