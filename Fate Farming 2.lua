@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.1.3  *
+*  2.1.4  *
 ***********
-    -> 2.1.3    Updated MoveToFate to require character be in flying state
+    -> 2.1.4    Fixed NPC stutter step, clear npc target once in combat. Changed TelepotTown close logic
+                Updated MoveToFate to require character be in flying state
                 Added mounted check for MoveToFate unstuck
                 Removed CurrentFate fate update while interacting with fate npc,
                 Add back manual /lsync for npc fates, Add check for if Retainers is false,
@@ -1125,6 +1126,7 @@ function Dismount()
         local z2 = GetPlayerRawZPos()
 
         if GetCharacterCondition(CharacterCondition.flying) and DistanceBetween(x1, y1, z1, x2, y2, z2) < 2 then
+            LogInfo("Unable to dismount here. Moving to another spot.")
             local random_x, random_y, random_z = RandomAdjustCoordinates(GetPlayerRawXPos(), GetPlayerRawYPos(), GetPlayerRawZPos(), 10)
             local nearestPointX = QueryMeshNearestPointX(random_x, random_y, random_z, 100, 100)
             local nearestPointY = QueryMeshNearestPointY(random_x, random_y, random_z, 100, 100)
@@ -1132,7 +1134,7 @@ function Dismount()
             if nearestPointX ~= nil and nearestPointY ~= nil and nearestPointZ ~= nil then
                 PathfindAndMoveTo(nearestPointX, nearestPointY, nearestPointZ)
             end
-            yield("/wait 2")
+            yield("/wait 1")
         end
     elseif GetCharacterCondition(CharacterCondition.mounted) then
         yield('/ac dismount')
@@ -1202,12 +1204,6 @@ function MoveToFate()
             State = CharacterState.interactWithNpc
             LogInfo("State Change: InteractWithFateNpc")
             return
-        elseif IsInFate() then
-            if CurrentFate.npcName ~=nil and GetTargetName() == CurrentFate.npcName then
-                LogInfo("Attempting to clear target.")
-                ClearTarget()
-                yield("/wait 1")
-            end
         end
         return
     end
@@ -1249,7 +1245,7 @@ function InteractWithFateNpc()
         State = CharacterState.ready
         LogInfo("State Change: Ready")
     elseif PathfindInProgress() or PathIsRunning() then
-        if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 10 then
+        if HasTarget() and GetTargetName() == CurrentFate.npcName and GetDistanceToTarget() < 5 then
             yield("/vnav stop")
         end
         return
@@ -1398,6 +1394,12 @@ function HandleCombat()
         return
     end
 
+    if CurrentFate ~=nil and CurrentFate.npcName ~=nil and GetTargetName() == CurrentFate.npcName then
+        LogInfo("Attempting to clear target.")
+        ClearTarget()
+        yield("/wait 1")
+    end
+
     if not CombatModsOn then
         TurnOnCombatMods()
     end
@@ -1521,12 +1523,59 @@ function HandleDeath()
     end
 end
 
+function ExchangeOldVouchers()
+    if not IsInZone(962) then
+        TeleportTo("Old Sharlayan")
+        return
+    end
+
+    if PathfindInProgress() or PathIsRunning() then
+        return
+    end
+
+    local gadfrid = { x=74.17, y=5.15, z=-37.44}
+    if GetDistanceToPoint(gadfrid.x, gadfrid.y, gadfrid.z) > 5 then
+        PathfindAndMoveTo(gadfrid.x, gadfrid.y, gadfrid.z)
+    else
+        if not HasTarget() or GetTargetName() ~= "Gadfrid" then
+            yield("/target Gadfrid")
+        elseif not GetCharacterCondition(CharacterCondition.occupiedShopkeeper) then
+            yield("/interact")
+        end
+    end
+end
+
+function ExchangeNewVouchers()
+    if not IsInZone(1186) then
+        TeleportTo("Solution Nine")
+        return
+    end
+
+    local beryl = { x=-198.47, y=0.92, z=-6.95 }
+    local nexusArcade = { x=-157.74, y=0.29, z=17.43 }
+    if GetDistanceToPoint(beryl.x, beryl.y, beryl.z) > (DistanceBetween(nexusArcade.x, nexusArcade.y, nexusArcade.z, beryl.x, beryl.y, beryl.z) + 10) then
+        yield("/li nexus arcade")
+        return
+    elseif GetDistanceToPoint(beryl.x, beryl.y, beryl.z) > 5 then
+        if IsAddonVisible("TelepotTown") then
+            yield("/callback TelepotTown false -1")
+        elseif PathfindInProgress() or PathIsRunning() then
+            return
+        else
+            PathfindAndMoveTo(beryl.x, beryl.y, beryl.z)
+        end
+    else
+        if not HasTarget() or GetTargetName() ~= "Beryl" then
+            yield("/target Beryl")
+        elseif not GetCharacterCondition(CharacterCondition.occupiedShopkeeper) then
+            yield("/interact")
+        end
+    end
+end
+
+
 function ExchangeVouchers()
     if BicolorGemCount >= 1400 then
-        if PathfindInProgress() or PathIsRunning() then
-            return
-        end
-
         if IsAddonVisible("SelectYesno") then
             yield("/callback SelectYesno true 0")
             return
@@ -1538,46 +1587,9 @@ function ExchangeVouchers()
         end
 
         if OldV then
-            if not IsInZone(962) then
-                TeleportTo("Old Sharlayan")
-                return
-            end
-
-            local gadfrid = { x=74.17, y=5.15, z=-37.44}
-            if GetDistanceToPoint(gadfrid.x, gadfrid.y, gadfrid.z) > 5 then
-                PathfindAndMoveTo(gadfrid.x, gadfrid.y, gadfrid.z)
-            else
-                if not HasTarget() or GetTargetName() ~= "Gadfrid" then
-                    yield("/target Gadfrid")
-                elseif not GetCharacterCondition(CharacterCondition.occupiedShopkeeper) then
-                    yield("/interact")
-                end
-            end
+            ExchangeOldVouchers()
         else
-            if not IsInZone(1186) then
-                TeleportTo("Solution Nine")
-                return
-            end
-
-            local beryl = { x=-198.47, y=0.92, z=-6.95 }
-            local nexusArcade = { x=-157.74, y=0.29, z=17.43 }
-            if GetDistanceToPoint(beryl.x, beryl.y, beryl.z) > (DistanceBetween(nexusArcade.x, nexusArcade.y, nexusArcade.z, beryl.x, beryl.y, beryl.z) + 10) then
-                yield("/li nexus arcade")
-                return
-            elseif GetDistanceToPoint(beryl.x, beryl.y, beryl.z) > 5 then
-                if IsAddonVisible("TelepotTown") then
-                    yield("/callback TelepotTown false -1")
-                else
-                    PathfindAndMoveTo(beryl.x, beryl.y, beryl.z)
-                end
-                return
-            else
-                if not HasTarget() or GetTargetName() ~= "Beryl" then
-                    yield("/target Beryl")
-                elseif not GetCharacterCondition(CharacterCondition.occupiedShopkeeper) then
-                    yield("/interact")
-                end
-            end
+            ExchangeNewVouchers()
         end
     else
         if IsAddonVisible("ShopExchangeCurrency") then
