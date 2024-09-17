@@ -8,17 +8,17 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.1.4  *
+*  2.2.0  *
 ***********
-    -> 2.1.4    Fixed NPC stutter step, clear npc target once in combat. Changed TelepotTown close logic
+    -> 2.2.0    Added collections fates
+                Fixed fate syncing in Mare Lamentorum
+                Fixed NPC stutter step, clear npc target once in combat. Changed TelepotTown close logic
                 Updated MoveToFate to require character be in flying state
                 Added mounted check for MoveToFate unstuck
-                Removed CurrentFate fate update while interacting with fate npc,
-                Add back manual /lsync for npc fates, Add check for if Retainers is false,
-                Closes mini aetheryte window after moving to Nexus Exchange,
-                Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers,
-                Added checks for CurrentFate == nil while moving and interacting with npc,
-                Fixed repair function, Added regions, Cleaned up food check, Added materia extraction back
+                Removed CurrentFate fate update while interacting with fate npc
+                Add back manual /lsync for npc fates, Add check for if Retainers is false
+                Closes mini aetheryte window after moving to Nexus Exchange
+                Added check for zones with only one instance, rearranged order of bicolor exchange -> retainers
     -> 2.0.0    State system
 
 *********************
@@ -229,8 +229,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -243,8 +242,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -257,8 +255,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -272,8 +269,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -286,8 +282,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -301,8 +296,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -316,8 +310,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -331,8 +324,7 @@ FatesData = {
             collectionsFates= {},
             otherNpcFates= {},
             bossFates= {},
-            blacklistedFates= {
-            }
+            blacklistedFates= {}
         }
     },
     {
@@ -344,7 +336,7 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Pick-up Sticks",
+                { fateName="Pick-up Sticks", npcName="Crystarium Botanist" }
             },
             otherNpcFates= {},
             bossFates= {
@@ -365,7 +357,7 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Ironbeard Builders - Rebuilt",
+                { fateName="Ironbeard Builders - Rebuilt", npcName="Tholl Engineer" }
             },
             otherNpcFates= {},
             bossFates= {
@@ -406,10 +398,10 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Twice Upon a Time",
+                { fateName="Twice Upon a Time", npcName="Nectar-seeking Pixie" }
             },
             otherNpcFates= {
-                { fateName= "Once Upon a Time", npcName= "Nectar-seeking Pixie" },
+                { fateName="Once Upon a Time", npcName="Nectar-seeking Pixie" },
             },
             bossFates= {
                 "Thrice Upon a Time",
@@ -432,12 +424,12 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Picking up the Pieces",
-                "Pluck of the Draw",
-                "Monkeying Around",
+                { fateName="Picking up the Pieces", npcName="Night's Blessed" },
+                { fateName="Pluck of the Draw", npcName="Myalna Bowsing" },
+                { fateName="Monkeying Around", npcName="Fanow Warder" }
             },
             otherNpcFates= {
-                { fateName= "Queen of the Harpies", npcName= "Fanow Huntress" },
+                { fateName="Queen of the Harpies", npcName="Fanow Huntress" },
             },
             bossFates= {
                 "Attack of the Killer Tomatl",
@@ -461,13 +453,13 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Low Coral Fiber",
-                "Pearls Apart",
+                { fateName="Low Coral Fiber", npcName="Teushs Ooan" },
+                { fateName="Pearls Apart", npcName="Ondo Peddler" }
             },
             otherNpcFates= {
-                { fateName= "Where has the Dagon", npcName= "Teushs Ooan" },
-                { fateName= "Ondo of Blood", npcName= "Teushs Ooan" },
-                { fateName= "Lookin' Back on the Track", npcName= "Teushs Ooan" },
+                { fateName="Where has the Dagon", npcName="Teushs Ooan" },
+                { fateName="Ondo of Blood", npcName="Teushs Ooan" },
+                { fateName="Lookin' Back on the Track", npcName="Teushs Ooan" },
             },
             bossFates= {
                 "Ondo of Blood",
@@ -547,16 +539,17 @@ FatesData = {
         zoneName = "Mare Lamentorum",
         zoneId = 959,
         aetheryteList = {
-            { aetheryteName="Sinus Lacrimarum", x=-566, y=134, z=650 },
-            { aetheryteName="Bestways Burrow", x=-0, y=-128, z=-512 },
+            --{ aetheryteName="Sinus Lacrimarum", x=-566, y=134, z=650 },
+            { aetheryteName="Sinus Lacrimarum",  x=-0.10, y=116.80, z=311.89938 },
+            { aetheryteName="Bestways Burrow", x=0, y=-128, z=-512 },
         },
         fatesList= {
             collectionsFates= {
-                "What a Thrill",
+                { fateName="What a Thrill", npcName="Thrillingway" }
             },
             otherNpcFates= {
-                { fateName= "Lepus Lamentorum: Dynamite Disaster", npcName= "Warringway" },
-                { fateName= "Lepus Lamentorum: Cleaner Catastrophe", npcName= "Fallingway" },
+                { fateName="Lepus Lamentorum: Dynamite Disaster", npcName="Warringway" },
+                { fateName="Lepus Lamentorum: Cleaner Catastrophe", npcName="Fallingway" },
             },
             bossFates= {
                 "The Stones of Silence",
@@ -578,10 +571,10 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Omicron Recall: Comms Expansion"
+                { fateName="Omicron Recall: Comms Expansion", npcName="N-6205" }
             },
             otherNpcFates= {
-                { fateName= "Wings of Glory", npcName= "Ahl Ein's Kin" },
+                { fateName="Wings of Glory", npcName="Ahl Ein's Kin" },
             },
             bossFates= {
                 "Far from the Madding Horde",
@@ -601,12 +594,12 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "So Sorry, Sokles",
+                { fateName="So Sorry, Sokles", npcName="Flora Overseer" }
             },
             otherNpcFates= {
                 { fateName="Grand Designs: Unknown Execution", npcName="Meletos the Inscrutable" },
-                { fateName= "Grand Designs: Aigokeros", npcName= "Meletos the Inscrutable" },
-                { fateName= "Nature's Staunch Protector", npcName= "Monoceros Monitor" },
+                { fateName="Grand Designs: Aigokeros", npcName="Meletos the Inscrutable" },
+                { fateName="Nature's Staunch Protector", npcName="Monoceros Monitor" },
             },
             bossFates= {
                 "Grand Designs: Io",
@@ -627,11 +620,11 @@ FatesData = {
         fatesList= {
             collectionsFates= {},
             otherNpcFates= {
-                { fateName= "Pasture Expiration Date", npcName= "Tsivli Stoutstrider" },
-                -- { fateName= "Gust Stop Already", npcName= "Mourning Yok Huy" },
-                { fateName= "Lay Off the Horns", npcName= "Yok Huy Vigilkeeper" },
-                { fateName= "Birds Up", npcName= "Coffee Farmer" },
-                { fateName= "Salty Showdown", npcName= "Chirwagur Sabreur" }
+                { fateName="Pasture Expiration Date", npcName="Tsivli Stoutstrider" },
+                { fateName="Gust Stop Already", npcName="Mourning Yok Huy" },
+                { fateName="Lay Off the Horns", npcName="Yok Huy Vigilkeeper" },
+                { fateName="Birds Up", npcName="Coffee Farmer" },
+                { fateName="Salty Showdown", npcName="Chirwagur Sabreur" }
             },
             bossFates= {
                 "Panaq Attack",
@@ -654,8 +647,8 @@ FatesData = {
         },
         fatesList={
             collectionsFates={
-                "Borne on the Backs of Burrowers",
-                "Combing the Area"
+                { fateName="Borne on the Backs of Burrowers", npcName="Moblin Forager" },
+                { fateName="Combing the Area", npcName="Hanuhanu Combmaker" }
             },
             otherNpcFates= {},
             bossFates= {
@@ -675,13 +668,13 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Escape Shroom",
+                { fateName="Escape Shroom", npcName="Hoobigo Forager" }
             },
             otherNpcFates= {
-                --{ fateName= , npcName= "Xbr'aal Hunter" }, 2 npcs names same thing....
-                { fateName= "Le Selva se lo Llevó", npcName= "Xbr'aal Hunter" },
-                { fateName= "Stabbing Gutward", npcName= "Doppro Spearbrother" },
-                --{ fateName= , npcName= "Xbr'aal Sentry" }, -- 2 npcs named same thing.....
+                --{ fateName=, npcName="Xbr'aal Hunter" }, 2 npcs names same thing....
+                { fateName="Le Selva se lo Llevó", npcName="Xbr'aal Hunter" },
+                { fateName="Stabbing Gutward", npcName="Doppro Spearbrother" },
+                --{ fateName=, npcName="Xbr'aal Sentry" }, -- 2 npcs named same thing.....
             },
             bossFates= {
                 "Moths are Tough"
@@ -702,16 +695,16 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "Gonna Have Me Some Fur",
-                "The Serpentlord Sires", -- Br'uk Vaw of the Setting Sun
+                { fateName="Gonna Have Me Some Fur", npcName="Tonawawtan Trapper" },
+                { fateName="The Serpentlord Sires", npcName="Br'uk Vaw of the Setting Sun" }
             },
             otherNpcFates= {
-                { fateName= "The Dead Never Die", npcName= "Tonawawtan Worker" },
-                { fateName= "Ain't What I Herd", npcName= "Hhetsarro Herder" },
-                { fateName= "Helms off to the Bull", npcName= "Hhetsarro Herder" },
-                { fateName= "A Raptor Runs Through It", npcName= "Hhetsarro Angler" },
-                { fateName= "The Serpentlord Suffers", npcName= "Br'uk Vaw of the Setting Sun" },
-                { fateName= "That's Me and the Porter", npcName= " Pelupelu Peddler" },
+                { fateName="The Dead Never Die", npcName="Tonawawtan Worker" },
+                { fateName="Ain't What I Herd", npcName="Hhetsarro Herder" },
+                { fateName="Helms off to the Bull", npcName="Hhetsarro Herder" },
+                { fateName="A Raptor Runs Through It", npcName="Hhetsarro Angler" },
+                { fateName="The Serpentlord Suffers", npcName="Br'uk Vaw of the Setting Sun" },
+                { fateName="That's Me and the Porter", npcName="Pelupelu Peddler" },
             },
             bossFates= {
                 "The Serpentlord Seethes",
@@ -732,16 +725,16 @@ FatesData = {
         },
         fatesList= {
             collectionsFates= {
-                "License to Dill",
-                "When It's So Salvage"
+                { fateName="License to Dill", npcName="Tonawawtan Provider" },
+                { fateName="When It's So Salvage", npcName="Refined Reforger" }
             },
             otherNpcFates= {
-                { fateName= "It's Super Defective", npcName= "Novice Hunter" },
-                { fateName= "Running of the Katobleps", npcName= "Novice Hunter" },
-                { fateName= "Ware the Wolves", npcName= "Imperiled Hunter" },
-                { fateName= "Domo Arigato", npcName= "Perplexed Reforger" },
-                { fateName= "Old Stampeding Grounds", npcName= "Driftdowns Reforger" },
-                { fateName= "Pulling the Wool", npcName= "Panicked Courier" }
+                { fateName="It's Super Defective", npcName="Novice Hunter" },
+                { fateName="Running of the Katobleps", npcName="Novice Hunter" },
+                { fateName="Ware the Wolves", npcName="Imperiled Hunter" },
+                { fateName="Domo Arigato", npcName="Perplexed Reforger" },
+                { fateName="Old Stampeding Grounds", npcName="Driftdowns Reforger" },
+                { fateName="Pulling the Wool", npcName="Panicked Courier" }
             },
             bossFates= {
                 "A Scythe to an Axe Fight",
@@ -765,8 +758,8 @@ FatesData = {
                 "Scattered Memories"
             },
             otherNpcFates= {
-                { fateName= "Canal Carnage", npcName= "Unlost Sentry GX" },
-                { fateName= "Mascot March", npcName= "The Grand Marshal" }
+                { fateName="Canal Carnage", npcName="Unlost Sentry GX" },
+                { fateName="Mascot March", npcName="The Grand Marshal" }
             },
             bossFates= {
                 "Feed Me, Sentries",
@@ -785,7 +778,7 @@ FatesData = {
 --#region Fate Functions
 function IsCollectionsFate(fateName)
     for i, collectionsFate in ipairs(SelectedZone.fatesList.collectionsFates) do
-        if collectionsFate == fateName then
+        if collectionsFate.fateName == fateName then
             return true
         end
     end
@@ -821,6 +814,11 @@ end
 
 function GetFateNpcName(fateName)
     for i, fate in ipairs(SelectedZone.fatesList.otherNpcFates) do
+        if fate.fateName == fateName then
+            return fate.npcName
+        end
+    end
+    for i, fate in ipairs(SelectedZone.fatesList.collectionsFates) do
         if fate.fateName == fateName then
             return fate.npcName
         end
@@ -929,10 +927,8 @@ function SelectNextFate()
         LogInfo("[FATE] Time left on fate #:"..tempFate.fateId..": "..math.floor(tempFate.timeLeft//60).."min, "..math.floor(tempFate.timeLeft%60).."s")
         
         if not (tempFate.x == 0 and tempFate.z == 0) then -- sometimes game doesn't send the correct coords
-            if IsCollectionsFate(tempFate.fateName) then -- skip collections fates
-                LogInfo("[FATE] Skipping fate #"..tempFate.fateId.." "..tempFate.fateName.." due to being collections fate.")
-            elseif not IsBlacklistedFate(tempFate.fateName) then -- check fate is not blacklisted for any reason
-                if IsOtherNpcFate(tempFate.fateName) then
+            if not IsBlacklistedFate(tempFate.fateName) then -- check fate is not blacklisted for any reason
+                if IsOtherNpcFate(tempFate.fateName) or IsCollectionsFate(tempFate.fateName) then
                     if tempFate.startTime > 0 then -- if someone already opened this fate, then treat is as all the other fates
                         nextFate = SelectNextFateHelper(tempFate, nextFate)
                     else -- no one has opened this fate yet
@@ -1200,7 +1196,7 @@ function MoveToFate()
             return
         end
         
-        if IsOtherNpcFate(CurrentFate.fateName) and CurrentFate.startTime == 0 then
+        if (IsOtherNpcFate(CurrentFate.fateName) or IsCollectionsFate(CurrentFate.fateName)) and CurrentFate.startTime == 0 then
             State = CharacterState.interactWithNpc
             LogInfo("State Change: InteractWithFateNpc")
             return
@@ -1233,10 +1229,13 @@ function MoveToFate()
 end
 
 function InteractWithFateNpc()
+    PandoraSetFeatureState("Auto-Sync FATEs", false)
+    LogInfo("Disabling Pandora Auto-Sync FATEs")
 
-    if IsInFate() or GetCharacterCondition(CharacterCondition.inCombat) then
+    if (IsInFate() or GetCharacterCondition(CharacterCondition.inCombat)) and CurrentFate.npcX ~= nil then
         yield("/wait 1")
         yield("/lsync") -- there's a milisecond between when the fate starts and the lsync command becomes available, so Pandora's lsync won't trigger
+        yield("/wait 1")
         PandoraSetFeatureState("Auto-Sync FATEs", true)
         State = CharacterState.inCombat
         LogInfo("State Change: InCombat")
@@ -1256,8 +1255,11 @@ function InteractWithFateNpc()
             return
         end
 
-        if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) > 5 then
-            PandoraSetFeatureState("Auto-Sync FATEs", false)
+        CurrentFate.npcX = GetTargetRawXPos()
+        CurrentFate.npcY = GetTargetRawYPos()
+        CurrentFate.npcZ = GetTargetRawZPos()
+
+        if GetDistanceToPoint(CurrentFate.npcX, CurrentFate.npcY, CurrentFate.npcZ) > 5 then
             MoveToNPC()
             return
         end
@@ -1266,6 +1268,35 @@ function InteractWithFateNpc()
             yield("/callback SelectYesno true 0")
         elseif not GetCharacterCondition(CharacterCondition.occupied) then
             yield("/interact")
+        end
+    end
+end
+
+function CollectionsFatesTurnIn()
+    if (not HasTarget() or GetTargetName()~=CurrentFate.npcName) then
+        yield("/target "..CurrentFate.npcName)
+        return
+    end
+
+    if PathfindInProgress() or PathIsRunning() then
+        return
+    end
+
+    if GetDistanceToPoint(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos()) > 5 then
+        MoveToNPC()
+        return
+    else
+        yield("/echo less than 5 distance from collections npc")
+        yield("/interact")
+        yield("/wait 3")
+        EstimatedKills = 0
+
+        if GetFateProgress(CurrentFate.fateId) < 100 then
+            State = CharacterState.inCombat
+            LogInfo("State Change: InCombat")
+        else
+            State = CharacterState.ready
+            LogInfo("State Change: Ready")
         end
     end
 end
@@ -1381,6 +1412,7 @@ function TurnOffCombatMods()
     end
 end
 
+EstimatedKills = 0
 function HandleCombat()
     if GetCharacterCondition(CharacterCondition.dead) then
         TurnOffCombatMods()
@@ -1392,6 +1424,18 @@ function HandleCombat()
         State = CharacterState.ready
         LogInfo("State Change: Ready")
         return
+    elseif GetCharacterCondition(CharacterCondition.mounted) then
+        State = CharacterState.dismounting
+        LogInfo("State Change: Dismounting")
+        return
+    elseif CurrentFate ~= nil and IsCollectionsFate(CurrentFate.fateName) then
+        -- random turn in 10% of the time
+        local r = math.random()
+        LogInfo("Random turn in number: "..r)
+        if r < 0.05 or GetFateProgress(CurrentFate.fateId) == 100 then
+            State = CharacterState.collectionsFateTurnIn
+            LogInfo("State Change: CollectionsFatesTurnIn")
+        end
     end
 
     if CurrentFate ~=nil and CurrentFate.npcName ~=nil and GetTargetName() == CurrentFate.npcName then
@@ -1405,12 +1449,6 @@ function HandleCombat()
     end
 
     GemAnnouncementLock = false
-    
-    if GetCharacterCondition(CharacterCondition.mounted) then
-        State = CharacterState.dismounting
-        LogInfo("State Change: Dismounting")
-        return
-    end
 
     --Paths to enemys when Bossmod is disabled
     if not useBM then
@@ -1426,14 +1464,24 @@ function HandleCombat()
         yield("/battletarget")
     end
 
+    if GetTargetHP() < 1 then
+        EstimatedKills = EstimatedKills + 1
+    end
+
     -- pathfind closer if enemies are too far
     if IsInFate() and not GetCharacterCondition(CharacterCondition.inCombat) and HasTarget() then
         if GetDistanceToTarget() > MaxDistance then
-            if not PathfindInProgress() or PathIsRunning() then
+            if not (PathfindInProgress() or PathIsRunning()) then
                 PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos())
             end
         else
-            yield("/vnav stop")
+            if PathfindInProgress() or PathIsRunning() then
+                yield("/vnav stop")
+            else
+                --inch closer 3 seconds
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos())
+                yield("/wait 3")
+            end
         end
     end
     yield("/wait 1")
@@ -1451,11 +1499,14 @@ function FoodCheck()
 end
 
 function Ready()
-    LogInfo("Ready")
+    EstimatedKills = 0
 
     FoodCheck()
 
-    if GetCharacterCondition(CharacterCondition.inCombat) or (not PathIsRunning() and IsInFate()) then
+    if GetCharacterCondition(CharacterCondition.inCombat) or
+        (not PathIsRunning() and IsInFate() and
+         not (IsCollectionsFate(CurrentFate.fateName) and GetFateProgress(CurrentFate.fateId) == 100))
+    then
         State = CharacterState.inCombat
         LogInfo("State Change: InCombat")
     elseif GetCharacterCondition(CharacterCondition.dead) then
@@ -1500,24 +1551,18 @@ function HandleDeath()
         if Echo then
             yield("/echo [FATE] You have died. Returning to home aetheryte.")
         end
-        while not IsAddonVisible("SelectYesno") do --rez addon wait
-            yield("/wait 1")
-        end
 
         if IsAddonVisible("SelectYesno") then --rez addon yes
             yield("/callback SelectYesno true 0")
             yield("/wait 0.1")
         end
-
-        while GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) do --wait between areas
-            yield("/wait 1")
-        end
-
-        while GetCharacterCondition(CharacterCondition.dead) do --wait till alive
-            yield("/wait 1")
-        end
-
-        while not IsInZone(SelectedZone.zoneId) do
+    elseif GetCharacterCondition(CharacterCondition.casting) or GetCharacterCondition(CharacterCondition.transition) then
+        return
+    else
+        if IsInZone(SelectedZone.zoneId) then
+            State = CharacterState.ready
+            LogInfo("State Change: Ready")
+        else
             TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
         end
     end
@@ -1574,6 +1619,7 @@ function ExchangeNewVouchers()
 end
 
 
+
 function ExchangeVouchers()
     if BicolorGemCount >= 1400 then
         if IsAddonVisible("SelectYesno") then
@@ -1608,11 +1654,9 @@ function ExchangeVouchers()
     end
 end
 
-ProcessDeliveroo = true
 function ProcessRetainers()
     LogInfo("[FATE] Handling retainers...")
     if ARRetainersWaitingToBeProcessed() and GetInventoryFreeSlotCount() > 1 then
-        ProcessDeliveroo = true
     
         if PathfindInProgress() or PathIsRunning() then
             return
@@ -1653,26 +1697,30 @@ function ProcessRetainers()
             State = CharacterState.ready
             LogInfo("State Change: Ready")
         elseif not GetCharacterCondition(CharacterCondition.occupiedSummoningBell) then
-            if ProcessDeliveroo and TurnIn and HasPlugin("Deliveroo") then
-                ProcessDeliveroo = false
-                if GetInventoryFreeSlotCount() < slots and TurnIn then
-                    yield("/li gc")
-                    yield("/wait 1")
-                end
-                while DeliverooIsTurnInRunning() do
-                    yield("/wait 1")
-                    yield("/deliveroo enable")
-                end
-                if DeliverooIsTurnInRunning() then
-                    yield("/vnavmesh stop")
-                end
-                while DeliverooIsTurnInRunning() do
-                    yield("/wait 1")
-                end
-            else
-                TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
-            end
+            TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
         end
+    end
+end
+
+
+function TurnIn()
+    yield("/autoduty turnin")
+    yield("/wait 1")
+    while GetCharacterCondition(CharacterCondition.casting) do
+        yield("/wait 0.1")
+    end
+    yield("/wait 1")
+    while GetCharacterCondition(CharacterCondition.transition) do
+        yield("/wait 0.1")
+    end
+    yield("/wait 1")
+    while DeliverooIsTurnInRunning() do
+        yield("/wait 1")
+    end
+    yield("/wait 1")
+
+    if not IsInZone(SelectedZone.zoneId) then
+        TeleportTo(SelectedZone.aetheryteList[1].aetheryteName)
     end
 end
 
@@ -1752,8 +1800,10 @@ CharacterState = {
     dead = HandleDeath,
     exchangingVouchers = ExchangeVouchers,
     processRetainers = ProcessRetainers,
+    turnIn = TurnIn,
     movingToFate = MoveToFate,
     interactWithNpc = InteractWithFateNpc,
+    collectionsFateTurnIn = CollectionsFatesTurnIn,
     mounting = Mount,
     dismounting = Dismount,
     changingInstances = ChangeInstance,
@@ -1803,7 +1853,9 @@ while true do
         if GetCharacterCondition(CharacterCondition.dead) then
             State = CharacterState.dead
             LogInfo("State Change: Dead")
-        elseif State ~= CharacterState.inCombat and GetCharacterCondition(CharacterCondition.inCombat) and not GetCharacterCondition(CharacterCondition.mounted) then
+        elseif (State ~= CharacterState.inCombat and State ~= CharacterState.collectionsFateTurnIn) and
+            GetCharacterCondition(CharacterCondition.inCombat) and not GetCharacterCondition(CharacterCondition.mounted)
+        then
             State = CharacterState.inCombat
             LogInfo("State Change: InCombat")
         end
