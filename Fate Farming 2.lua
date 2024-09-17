@@ -8,9 +8,10 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 
 ***********
 * Version *
-*  2.2.0  *
+*  2.2.1  *
 ***********
-    -> 2.2.0    Added collections fates
+    -> 2.2.1    Clear target after collections fate turnin and better pathfinding
+                Added collections fates
                 Fixed fate syncing in Mare Lamentorum
                 Fixed NPC stutter step, clear npc target once in combat. Changed TelepotTown close logic
                 Updated MoveToFate to require character be in flying state
@@ -1146,7 +1147,11 @@ function MoveToNPC()
     yield("/target "..CurrentFate.npcName)
     if HasTarget() and GetTargetName()==CurrentFate.npcName then
         if GetDistanceToTarget() > 5 then
-            PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying))
+            if CurrentFate.npcX ~= nil then
+                PathfindAndMoveTo(CurrentFate.npcX, CurrentFate.npcY, CurrentFate.npcZ, GetCharacterCondition(CharacterCondition.flying))
+            else
+                PathfindAndMoveTo(GetTargetRawXPos(), GetTargetRawYPos(), GetTargetRawZPos(), GetCharacterCondition(CharacterCondition.flying))
+            end
         else
             yield("/vnav stop")
         end
@@ -1272,7 +1277,7 @@ function InteractWithFateNpc()
     end
 end
 
-function CollectionsFatesTurnIn()
+function CollectionsFateTurnIn()
     if (not HasTarget() or GetTargetName()~=CurrentFate.npcName) then
         yield("/target "..CurrentFate.npcName)
         return
@@ -1297,6 +1302,12 @@ function CollectionsFatesTurnIn()
         else
             State = CharacterState.ready
             LogInfo("State Change: Ready")
+        end
+
+        if CurrentFate ~=nil and CurrentFate.npcName ~=nil and GetTargetName() == CurrentFate.npcName then
+            LogInfo("Attempting to clear target.")
+            ClearTarget()
+            yield("/wait 1")
         end
     end
 end
@@ -1803,7 +1814,7 @@ CharacterState = {
     turnIn = TurnIn,
     movingToFate = MoveToFate,
     interactWithNpc = InteractWithFateNpc,
-    collectionsFateTurnIn = CollectionsFatesTurnIn,
+    collectionsFateTurnIn = CollectionsFateTurnIn,
     mounting = Mount,
     dismounting = Dismount,
     changingInstances = ChangeInstance,
