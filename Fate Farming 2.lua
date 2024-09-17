@@ -10,7 +10,7 @@ Created by: Prawellp, sugarplum done updates v0.1.8 to v0.1.9, pot0to
 * Version *
 *  2.2.1  *
 ***********
-    -> 2.2.1    Clear target after collections fate turnin and better pathfinding
+    -> 2.2.1    Clear target after collections fate turnin and better pathfinding to npc
                 Added collections fates
                 Fixed fate syncing in Mare Lamentorum
                 Fixed NPC stutter step, clear npc target once in combat. Changed TelepotTown close logic
@@ -1291,7 +1291,7 @@ function CollectionsFateTurnIn()
         MoveToNPC()
         return
     else
-        yield("/echo less than 5 distance from collections npc")
+        yield("/vnnav stop")
         yield("/interact")
         yield("/wait 3")
         EstimatedKills = 0
