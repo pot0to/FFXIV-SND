@@ -1,0 +1,1 @@
+Fate Farming script has moved to: https://github.com/pot0to/pot0to-SND-Scripts/blob/main/Fate%20Farming.lua
